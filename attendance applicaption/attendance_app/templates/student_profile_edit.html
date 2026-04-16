@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card form-card">
+    <h2>Request Student Profile Update</h2>
+    <p class="muted">Student profile changes are not applied directly. This request will be sent for faculty approval.</p>
+    {% if student['profile_picture'] %}
+        <img class="profile-photo" src="{{ url_for('main.profile_picture', filename=student['profile_picture']) }}" alt="Student profile picture">
+    {% endif %}
+    <form method="post" enctype="multipart/form-data" class="grid-form">
+        <label>Full Name<input type="text" name="full_name" value="{{ student['full_name'] }}" required></label>
+        <label>Profile Picture<input type="file" name="profile_picture" accept=".jpg,.jpeg,.png"></label>
+        <label>Father Name<input type="text" name="father_name" value="{{ student['father_name'] }}" required></label>
+        <label>
+            Institution Type
+            <select name="institution_type" id="student-self-institution-type" required>
+                {% for value, label in institution_options %}
+                    <option value="{{ value }}" {% if student['institution_type'] == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label id="student-self-institution-name-group">College / School / Institution Name<input type="text" name="institution_name" id="student-self-institution-name" value="{{ student['institution_name'] }}"></label>
+        <label>Branch<input type="text" name="branch" value="{{ student['branch'] }}" required></label>
+        <label>Semester<input type="text" name="semester" value="{{ student['semester'] }}" required></label>
+        <label>Year<input type="text" name="year" value="{{ student['year'] }}" required></label>
+        <label>Date of Birth<input type="date" name="dob" value="{{ student['dob'] }}" required></label>
+        <label>Class Roll Number<input type="text" name="class_roll_number" value="{{ student['class_roll_number'] }}" required></label>
+        <label>Roll Number<input type="text" name="roll_number" value="{{ student['roll_number'] }}" required></label>
+        <label>Registration Number<input type="text" name="registration_number" value="{{ student['registration_number'] }}" required></label>
+        <label>Gmail<input type="email" name="gmail" value="{{ student['gmail'] }}" required></label>
+        <label>Email<input type="email" name="email" value="{{ student['email'] }}" required></label>
+        <label>Mobile Number<input type="text" name="mobile_number" value="{{ student['mobile_number'] }}" required></label>
+        <label>New Password (optional)<input type="password" name="password"></label>
+        <button class="btn primary" type="submit">Send for Approval</button>
+    </form>
+</section>
+{% endblock %}

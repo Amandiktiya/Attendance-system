@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Attendance Hub | Smart Attendance Management System{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}Attendance Hub helps schools, colleges, faculty, and students manage attendance, profile approvals, reports, and daily academic records in one place.{% endblock %}">
+    <meta name="keywords" content="{% block meta_keywords %}attendance management system, student attendance, faculty dashboard, college attendance app, school attendance software{% endblock %}">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#0f766e">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{% block og_title %}Attendance Hub | Smart Attendance Management System{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Track attendance, manage student records, review approvals, and export reports from one organized dashboard.{% endblock %}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    {% block head_extra %}{% endblock %}
+</head>
+<body>
+    <header class="site-header">
+        <div class="brand-block">
+            <p class="eyebrow">Attendance Management System</p>
+            <h1><a href="{{ url_for('main.home') }}">Attendance Hub</a></h1>
+            <p class="brand-copy">A cleaner way to manage student attendance, approvals, and academic records.</p>
+        </div>
+        <nav aria-label="Primary navigation">
+            <a href="{{ url_for('main.home') }}">Home</a>
+            {% if current_user %}
+                <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
+                <a href="{{ url_for('main.applications') }}">Applications</a>
+                <a href="{{ url_for('main.attendance_report') }}">Reports</a>
+                {% if current_user['role'] in ['admin', 'faculty'] %}
+                    <a href="{{ url_for('main.approvals') }}">Approvals{% if pending_count %} ({{ pending_count }}){% endif %}</a>
+                {% endif %}
+                {% if current_user['role'] in ['admin', 'faculty'] %}
+                    <a href="{{ url_for('main.attendance') }}">Mark Attendance</a>
+                    <a href="{{ url_for('main.add_student') }}">Add Student</a>
+                {% endif %}
+                {% if current_user['role'] == 'admin' %}
+                    <a href="{{ url_for('main.add_faculty') }}">Add Faculty</a>
+                {% endif %}
+                <a href="{{ url_for('main.logout') }}">Logout</a>
+            {% else %}
+                <a href="{{ url_for('main.login') }}">Login</a>
+                <a href="{{ url_for('main.student_register') }}">Student Sign Up</a>
+            {% endif %}
+        </nav>
+    </header>
+
+    <main class="page-shell">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <section class="flash-stack">
+                    {% for category, message in messages %}
+                        <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </section>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

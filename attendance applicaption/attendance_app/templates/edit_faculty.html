@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card form-card">
+    <h2>Edit Faculty</h2>
+    <p class="muted">Admins can update faculty details, and faculty members can update their own profile.</p>
+    {% if faculty['profile_picture'] %}
+        <img class="profile-photo" src="{{ url_for('main.profile_picture', filename=faculty['profile_picture']) }}" alt="Faculty profile picture">
+    {% endif %}
+    <form method="post" enctype="multipart/form-data" class="grid-form">
+        <label>Full Name<input type="text" name="full_name" value="{{ faculty['full_name'] }}" required></label>
+        <label>Profile Picture<input type="file" name="profile_picture" accept=".jpg,.jpeg,.png"></label>
+        <label>Father Name<input type="text" name="father_name" value="{{ faculty['father_name'] }}"></label>
+        <label>
+            Institution Type
+            <select name="institution_type" id="edit-faculty-institution-type" required>
+                {% for value, label in institution_options %}
+                    <option value="{{ value }}" {% if faculty['institution_type'] == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label id="edit-faculty-institution-name-group">College / School Name<input type="text" name="institution_name" id="edit-faculty-institution-name" value="{{ faculty['institution_name'] }}"></label>
+        <label>Branch / Department<input type="text" name="branch" value="{{ faculty['branch'] }}" required></label>
+        <label>Email<input type="email" name="email" value="{{ faculty['email'] }}" required></label>
+        <label>Mobile Number<input type="text" name="mobile_number" maxlength="10" value="{{ faculty['mobile_number'] }}" required></label>
+        <label>New Password (optional)<input type="password" name="password"></label>
+        <button class="btn primary" type="submit">Update Faculty</button>
+    </form>
+</section>
+
+<script>
+    const editFacultyInstitutionType = document.getElementById("edit-faculty-institution-type");
+    const editFacultyInstitutionNameGroup = document.getElementById("edit-faculty-institution-name-group");
+    const editFacultyInstitutionName = document.getElementById("edit-faculty-institution-name");
+    const facultySchoolCollegeTypesSet = new Set({{ school_college_types|tojson }});
+
+    function syncEditFacultyInstitutionField() {
+        const needsInstitution = facultySchoolCollegeTypesSet.has(editFacultyInstitutionType.value);
+        editFacultyInstitutionNameGroup.style.display = needsInstitution ? "flex" : "none";
+        editFacultyInstitutionName.required = needsInstitution;
+        if (!needsInstitution) {
+            editFacultyInstitutionName.value = "";
+        }
+    }
+
+    editFacultyInstitutionType.addEventListener("change", syncEditFacultyInstitutionField);
+    syncEditFacultyInstitutionField();
+</script>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card">
+    <div class="section-head">
+        <h2>Student Applications</h2>
+        {% if current_user['role'] == 'student' %}
+            <a class="btn primary" href="{{ url_for('main.submit_application') }}">New Application</a>
+        {% endif %}
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Student</th>
+                    <th>Roll Number</th>
+                    <th>Branch</th>
+                    <th>Year/Sem</th>
+                    <th>Application</th>
+                    <th>File</th>
+                    <th>Submitted At</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in applications %}
+                    <tr>
+                        <td>{{ item['application_date'] }}</td>
+                        <td>{{ item['full_name'] }}</td>
+                        <td>{{ item['roll_number'] }}</td>
+                        <td>{{ item['branch'] }}</td>
+                        <td>{{ item['year'] }} / {{ item['semester'] }}</td>
+                        <td>{{ item['reason'] }}</td>
+                        <td>
+                            {% if item['file_name'] %}
+                                <a class="btn secondary" href="{{ url_for('main.download_application', application_id=item['id']) }}">Download</a>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>{{ item['created_at'] }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="8">No applications submitted yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
