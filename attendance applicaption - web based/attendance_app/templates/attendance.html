@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card">
+    <div class="section-head">
+        <h2>Mark Attendance</h2>
+        <form method="get" class="inline-form">
+            <label>
+                Date
+                <input type="date" name="attendance_date" value="{{ selected_date }}" min="{{ min_date }}" max="{{ today }}">
+            </label>
+            {% if current_user['role'] == 'admin' %}
+                <label>
+                    Branch
+                    <select name="branch">
+                        <option value="">All Branches</option>
+                        {% for branch in branches %}
+                            <option value="{{ branch }}" {% if selected_branch == branch %}selected{% endif %}>{{ branch }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+            {% else %}
+                <input type="hidden" name="branch" value="{{ selected_branch }}">
+            {% endif %}
+            <label>
+                Year / Semester
+                <select name="year_group">
+                    <option value="">All Years</option>
+                    {% for item in year_semester_filters %}
+                        <option value="{{ item.value }}" {% if selected_year_group == item.value %}selected{% endif %}>{{ item.label }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <button class="btn secondary" type="submit">Load</button>
+        </form>
+    </div>
+    <p class="muted">You can select any date from the past year and save attendance records.</p>
+    <form method="post">
+        <input type="hidden" name="attendance_date" value="{{ selected_date }}">
+        <input type="hidden" name="branch" value="{{ selected_branch }}">
+        <input type="hidden" name="year_group" value="{{ selected_year_group }}">
+        {% for group in grouped_students %}
+            <section class="card">
+                <h3>Year {{ group.year }} - Semester {{ group.semester }}</h3>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Institution</th>
+                                <th>Class Roll</th>
+                                <th>Roll Number</th>
+                                <th>Name</th>
+                                <th>Branch</th>
+                                <th>Status</th>
+                                <th>Remarks</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student in group.students %}
+                                <tr>
+                                    <td>{{ student['institution_name'] or '-' }}</td>
+                                    <td>{{ student['class_roll_number'] }}</td>
+                                    <td>{{ student['roll_number'] }}</td>
+                                    <td>{{ student['full_name'] }}</td>
+                                    <td>{{ student['branch'] }}</td>
+                                    <td>
+                                        <select name="status_{{ student['id'] }}">
+                                            <option value="Present" {% if student['status'] == 'Present' %}selected{% endif %}>Present</option>
+                                            <option value="Absent" {% if student['status'] == 'Absent' %}selected{% endif %}>Absent</option>
+                                            <option value="Late" {% if student['status'] == 'Late' %}selected{% endif %}>Late</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" name="remarks_{{ student['id'] }}" value="{{ student['remarks'] or '' }}" placeholder="Optional"></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        {% else %}
+            <p>No students have been added yet.</p>
+        {% endfor %}
+        <button class="btn primary" type="submit">Save Attendance</button>
+    </form>
+</section>
+{% endblock %}

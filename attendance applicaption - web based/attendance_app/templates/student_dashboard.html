@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card profile-card">
+    <h2>Student Dashboard</h2>
+    <div class="actions">
+        <a class="btn secondary" href="{{ url_for('main.student_profile_edit') }}">Request Profile Update</a>
+        <a class="btn primary" href="{{ url_for('main.submit_application') }}">Submit Application</a>
+    </div>
+    {% if current_user['profile_picture'] %}
+        <img class="profile-photo" src="{{ url_for('main.profile_picture', filename=current_user['profile_picture']) }}" alt="Student profile picture">
+    {% endif %}
+    <div class="profile-grid">
+        <div><span>Name</span><strong>{{ current_user['full_name'] }}</strong></div>
+        <div><span>Institution</span><strong>{{ current_user['institution_name'] or current_user['institution_type'] }}</strong></div>
+        <div><span>Class Roll Number</span><strong>{{ current_user['class_roll_number'] }}</strong></div>
+        <div><span>Roll Number</span><strong>{{ current_user['roll_number'] }}</strong></div>
+        <div><span>Registration Number</span><strong>{{ current_user['registration_number'] }}</strong></div>
+        <div><span>Branch</span><strong>{{ current_user['branch'] }}</strong></div>
+        <div><span>Semester</span><strong>{{ current_user['semester'] }}</strong></div>
+        <div><span>Year</span><strong>{{ current_user['year'] }}</strong></div>
+        <div><span>DOB</span><strong>{{ current_user['dob'] }}</strong></div>
+        <div><span>Mobile</span><strong>{{ current_user['mobile_number'] }}</strong></div>
+        <div><span>Father Name</span><strong>{{ current_user['father_name'] }}</strong></div>
+        <div><span>Gmail</span><strong>{{ current_user['gmail'] }}</strong></div>
+        <div><span>Email</span><strong>{{ current_user['email'] }}</strong></div>
+    </div>
+</section>
+
+<section class="card">
+    <h3>Profile Update Request Status</h3>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Status</th>
+                    <th>Requested At</th>
+                    <th>Resolved At</th>
+                    <th>Requested Changes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in edit_requests %}
+                    <tr>
+                        <td>{{ item['status']|title }}</td>
+                        <td>{{ item['created_at'] }}</td>
+                        <td>{{ item['resolved_at'] or '-' }}</td>
+                        <td>
+                            <table class="mini-table">
+                                <thead>
+                                    <tr>
+                                        <th>Field</th>
+                                        <th>Current</th>
+                                        <th>Requested</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for change in item['changes'] %}
+                                        <tr>
+                                            <td>{{ change.field }}</td>
+                                            <td>{{ change.current }}</td>
+                                            <td>{{ change.requested }}</td>
+                                        </tr>
+                                    {% else %}
+                                        <tr><td colspan="3">No visible field changes.</td></tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="4">No profile update request history is available.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="card">
+    <div class="section-head">
+        <h3>Your Attendance</h3>
+        <a class="btn secondary" href="{{ url_for('main.attendance_report') }}">View Report</a>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Remarks</th>
+                    <th>Marked By</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in attendance %}
+                    <tr>
+                        <td>{{ row['attendance_date'] }}</td>
+                        <td>{{ row['status'] }}</td>
+                        <td>{{ row['remarks'] or '-' }}</td>
+                        <td>{{ row['marked_by_name'] }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="4">Attendance is not available yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

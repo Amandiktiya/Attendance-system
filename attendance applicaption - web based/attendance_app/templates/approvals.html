@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card">
+    <div class="section-head">
+        <div>
+            <h2>Profile Edit Requests</h2>
+            <p class="muted">Filter student and faculty profile edit requests by role.</p>
+        </div>
+        <div class="actions">
+            <a class="btn {% if not selected_request_type %}primary{% else %}secondary{% endif %}" href="{{ url_for('main.approvals') }}">All Requests</a>
+            <a class="btn {% if selected_request_type == 'student' %}primary{% else %}secondary{% endif %}" href="{{ url_for('main.approvals', type='student') }}">Student Requests</a>
+            <a class="btn {% if selected_request_type == 'faculty' %}primary{% else %}secondary{% endif %}" href="{{ url_for('main.approvals', type='faculty') }}">Faculty Requests</a>
+        </div>
+    </div>
+</section>
+
+<section class="card">
+    <h2>Pending Approval Requests</h2>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Target Role</th>
+                    <th>Target User</th>
+                    <th>Institution</th>
+                    <th>Branch</th>
+                    <th>Requested By</th>
+                    <th>Requested Changes</th>
+                    <th>Created At</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in requests %}
+                    <tr>
+                        <td>{{ item['target_role']|title }}</td>
+                        <td>{{ item['target_name'] }}</td>
+                        <td>{{ item['target_institution'] or '-' }}</td>
+                        <td>{{ item['target_branch'] or '-' }}</td>
+                        <td>{{ item['requester_name'] }}</td>
+                        <td>
+                            <table class="mini-table">
+                                <thead>
+                                    <tr>
+                                        <th>Field</th>
+                                        <th>Current</th>
+                                        <th>Requested</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for change in item['changes'] %}
+                                        <tr>
+                                            <td>{{ change.field }}</td>
+                                            <td>{{ change.current }}</td>
+                                            <td>{{ change.requested }}</td>
+                                        </tr>
+                                    {% else %}
+                                        <tr><td colspan="3">No visible field changes.</td></tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </td>
+                        <td>{{ item['created_at'] }}</td>
+                        <td class="actions">
+                            <form method="post" action="{{ url_for('main.process_approval', change_id=item['id'], action='approve') }}">
+                                <input type="hidden" name="type" value="{{ selected_request_type }}">
+                                <button class="btn primary" type="submit">Approve</button>
+                            </form>
+                            <form method="post" action="{{ url_for('main.process_approval', change_id=item['id'], action='reject') }}">
+                                <input type="hidden" name="type" value="{{ selected_request_type }}">
+                                <button class="btn secondary" type="submit">Reject</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="8">No pending requests.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="card">
+    <h2>Approval History</h2>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Status</th>
+                    <th>Target Role</th>
+                    <th>Target User</th>
+                    <th>Institution</th>
+                    <th>Branch</th>
+                    <th>Requested By</th>
+                    <th>Requested Changes</th>
+                    <th>Resolved At</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in history %}
+                    <tr>
+                        <td>{{ item['status']|title }}</td>
+                        <td>{{ item['target_role']|title }}</td>
+                        <td>{{ item['target_name'] }}</td>
+                        <td>{{ item['target_institution'] or '-' }}</td>
+                        <td>{{ item['target_branch'] or '-' }}</td>
+                        <td>{{ item['requester_name'] }}</td>
+                        <td>
+                            <table class="mini-table">
+                                <thead>
+                                    <tr>
+                                        <th>Field</th>
+                                        <th>Current</th>
+                                        <th>Requested</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for change in item['changes'] %}
+                                        <tr>
+                                            <td>{{ change.field }}</td>
+                                            <td>{{ change.current }}</td>
+                                            <td>{{ change.requested }}</td>
+                                        </tr>
+                                    {% else %}
+                                        <tr><td colspan="3">No visible field changes.</td></tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </td>
+                        <td>{{ item['resolved_at'] or '-' }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="8">No approval history yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="auth-shell">
+    <div class="auth-card auth-card-wide">
+        <div class="auth-toggle-panel signup-side">
+            <div>
+                <h1>Student Sign Up</h1>
+                <p>Complete your profile, verify the OTP, and then sign in with your roll number and password.</p>
+                <a class="btn ghost" href="{{ url_for('main.login') }}">Back to Login</a>
+            </div>
+        </div>
+        <div class="auth-form-panel signup-form-panel">
+            <div class="auth-form">
+                <p class="eyebrow">Mobile Verification</p>
+                <h2>Create Student Account</h2>
+                <p class="muted">All fields are required. In demo mode, the OTP is shown on the screen.</p>
+
+                <form method="post" class="inline-form otp-form">
+                    <input type="hidden" name="action" value="send_otp">
+                    <label>
+                        Mobile Number
+                        <input type="text" name="mobile_number" maxlength="10" value="{{ registration_mobile or '' }}" required>
+                    </label>
+                    <button class="btn secondary" type="submit">Send OTP</button>
+                </form>
+
+                {% if otp_value %}
+                    <div class="otp-box">
+                        Demo OTP: <strong>{{ otp_value }}</strong>
+                    </div>
+                {% endif %}
+
+                <form method="post" enctype="multipart/form-data" class="grid-form signup-grid">
+                    <input type="hidden" name="action" value="register">
+                    <label>Full Name<input type="text" name="full_name" required></label>
+                    <label>Profile Picture<input type="file" name="profile_picture" accept=".jpg,.jpeg,.png" required></label>
+                    <label>Father Name<input type="text" name="father_name" required></label>
+                    <label>
+                        Institution Type
+                        <select name="institution_type" id="student-institution-type" required>
+                            <option value="">Select Type</option>
+                            {% for value, label in institution_options %}
+                                <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                    <label id="student-institution-name-group">College / School / Institution Name<input type="text" name="institution_name" id="student-institution-name"></label>
+                    <label>Branch<input type="text" name="branch" required></label>
+                    <label>Semester<input type="text" name="semester" required></label>
+                    <label>Year<input type="text" name="year" required></label>
+                    <label>Date of Birth<input type="date" name="dob" required></label>
+                    <label>Class Roll Number<input type="text" name="class_roll_number" inputmode="numeric" required></label>
+                    <label>Roll Number<input type="text" name="roll_number" required></label>
+                    <label>Registration Number<input type="text" name="registration_number" required></label>
+                    <label>Gmail<input type="email" name="gmail" required></label>
+                    <label>Alternate Email<input type="email" name="email" required></label>
+                    <label>Mobile Number<input type="text" name="mobile_number" maxlength="10" value="{{ registration_mobile or '' }}" required></label>
+                    <label>OTP Code<input type="text" name="otp_code" maxlength="6" required></label>
+                    <label>Set Password<input type="password" name="password" required></label>
+                    <button class="btn primary auth-submit" type="submit">Create Account</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    const studentInstitutionType = document.getElementById("student-institution-type");
+    const studentInstitutionNameGroup = document.getElementById("student-institution-name-group");
+    const studentInstitutionName = document.getElementById("student-institution-name");
+
+    function syncStudentInstitutionField() {
+        const needsInstitution = studentInstitutionType.value && studentInstitutionType.value !== "other_institution";
+        studentInstitutionNameGroup.style.display = needsInstitution ? "flex" : "none";
+        studentInstitutionName.required = needsInstitution;
+        if (!needsInstitution) {
+            studentInstitutionName.value = "";
+        }
+    }
+
+    studentInstitutionType.addEventListener("change", syncStudentInstitutionField);
+    syncStudentInstitutionField();
+</script>
+{% endblock %}

@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card">
+    <div class="section-head">
+        <h2>Attendance Report</h2>
+        <form method="get" class="inline-form">
+            <label>
+                From
+                <input type="date" name="from_date" value="{{ from_date }}" min="{{ min_date }}" max="{{ today }}">
+            </label>
+            <label>
+                To
+                <input type="date" name="to_date" value="{{ to_date }}" min="{{ min_date }}" max="{{ today }}">
+            </label>
+            {% if current_user['role'] == 'admin' %}
+                <label>
+                    Branch
+                    <select name="branch">
+                        <option value="">All Branches</option>
+                        {% for branch in branches %}
+                            <option value="{{ branch }}" {% if selected_branch == branch %}selected{% endif %}>{{ branch }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+            {% else %}
+                <input type="hidden" name="branch" value="{{ selected_branch }}">
+            {% endif %}
+            <button class="btn secondary" type="submit">Filter</button>
+            <button class="btn primary" type="submit" name="export" value="xlsx">Export Excel</button>
+        </form>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Month</th>
+                    <th>Institution</th>
+                    <th>Class Roll</th>
+                    <th>Roll Number</th>
+                    <th>Name</th>
+                    <th>Branch</th>
+                    <th>Semester</th>
+                    <th>Year</th>
+                    <th>Status</th>
+                    <th>Marked By</th>
+                    <th>Remarks</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                    <tr>
+                        <td>{{ row['attendance_date'] }}</td>
+                        <td>{{ row['attendance_date'][:7] }}</td>
+                        <td>{{ row['institution_name'] or '-' }}</td>
+                        <td>{{ row['class_roll_number'] or '-' }}</td>
+                        <td>{{ row['roll_number'] }}</td>
+                        <td>{{ row['full_name'] }}</td>
+                        <td>{{ row['branch'] }}</td>
+                        <td>{{ row['semester'] }}</td>
+                        <td>{{ row['year'] }}</td>
+                        <td>{{ row['status'] }}</td>
+                        <td>{{ row['marked_by_name'] }}</td>
+                        <td>{{ row['remarks'] or '-' }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="12">No attendance data was found for the selected date range.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
