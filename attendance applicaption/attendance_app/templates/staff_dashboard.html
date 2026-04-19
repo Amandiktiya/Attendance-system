@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero compact">
+    <div class="card">
+        <h2>{{ current_user['role']|title }} Dashboard</h2>
+        <p class="lead">From here, you can review students by branch, manage faculty, mark attendance, and export reports.</p>
+        <p class="muted">Institution: <strong>{{ current_user['institution_name'] or current_user['institution_type'] }}</strong></p>
+        {% if current_user['role'] == 'faculty' %}
+            <p class="muted">Branch Scope: <strong>{{ current_user['branch'] }}</strong></p>
+        {% endif %}
+        <div class="actions">
+            <a class="btn primary" href="{{ url_for('main.attendance') }}">Mark Attendance</a>
+            <a class="btn secondary" href="{{ url_for('main.approvals') }}">Approvals{% if pending_count %} ({{ pending_count }}){% endif %}</a>
+            <a class="btn secondary" href="{{ url_for('main.add_student') }}">Add Student</a>
+            {% if current_user['role'] == 'admin' %}
+                <a class="btn secondary" href="{{ url_for('main.add_faculty') }}">Add Faculty</a>
+            {% endif %}
+            <a class="btn secondary" href="{{ url_for('main.attendance_report') }}">Reports</a>
+        </div>
+    </div>
+    <div class="card">
+        <h3>Total Students</h3>
+        <p class="stat">{{ students|length }}</p>
+    </div>
+</section>
+
+{% if current_user['role'] == 'admin' %}
+<section class="card">
+    <div class="section-head">
+        <h3>Admin Edit Request History</h3>
+        <a class="btn secondary" href="{{ url_for('main.approvals') }}">All Edit Requests</a>
+        <a class="btn primary" href="{{ url_for('main.approvals', type='student') }}">Student Edit Requests</a>
+        <a class="btn secondary" href="{{ url_for('main.approvals', type='faculty') }}">Faculty Edit Requests</a>
+    </div>
+    <p class="muted">The approvals page includes edit request history for both students and faculty.</p>
+</section>
+
+<section class="card">
+    <form method="get" class="inline-form">
+        <label>
+            Branch Filter
+            <select name="branch">
+                <option value="">All Branches</option>
+                {% for branch in branches %}
+                    <option value="{{ branch }}" {% if selected_branch == branch %}selected{% endif %}>{{ branch }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>
+            Year / Semester
+            <select name="year_group">
+                <option value="">All Years</option>
+                {% for item in year_semester_filters %}
+                    <option value="{{ item.value }}" {% if selected_year_group == item.value %}selected{% endif %}>{{ item.label }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <button class="btn secondary" type="submit">Apply</button>
+    </form>
+</section>
+{% endif %}
+
+{% if current_user['role'] == 'faculty' %}
+<section class="card">
+    <form method="get" class="inline-form">
+        <label>
+            Year / Semester
+            <select name="year_group">
+                <option value="">All Years</option>
+                {% for item in year_semester_filters %}
+                    <option value="{{ item.value }}" {% if selected_year_group == item.value %}selected{% endif %}>{{ item.label }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <button class="btn secondary" type="submit">Apply</button>
+    </form>
+</section>
+{% endif %}
+
+{% if current_user['role'] == 'admin' or current_user['role'] == 'faculty' %}
+{% for group in grouped_students %}
+<section class="card">
+    <h3>Year {{ group.year }} - Semester {{ group.semester }}</h3>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Class Roll</th>
+                    <th>Photo</th>
+                    <th>Roll Number</th>
+                    <th>Name</th>
+                    <th>Institution</th>
+                    <th>Branch</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in group.students %}
+                    <tr>
+                        <td>{{ student['class_roll_number'] }}</td>
+                        <td>
+                            {% if student['profile_picture'] %}
+                                <img class="avatar" src="{{ url_for('main.profile_picture', filename=student['profile_picture']) }}" alt="Student photo">
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>{{ student['roll_number'] }}</td>
+                        <td>{{ student['full_name'] }}</td>
+                        <td>{{ student['institution_name'] or '-' }}</td>
+                        <td>{{ student['branch'] }}</td>
+                        <td class="actions">
+                            <a class="btn secondary" href="{{ url_for('main.edit_student', user_id=student['id']) }}">Edit</a>
+                            <form method="post" action="{{ url_for('main.delete_student', user_id=student['id']) }}">
+                                <button class="btn secondary" type="submit">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% else %}
+<section class="card"><p>No students added yet.</p></section>
+{% endfor %}
+{% endif %}
+
+{% if current_user['role'] == 'admin' %}
+<section class="card">
+    <h3>Faculty</h3>
+    <form method="get" class="inline-form">
+        <input type="hidden" name="branch" value="{{ selected_branch }}">
+        <input type="hidden" name="year_group" value="{{ selected_year_group }}">
+        <input type="hidden" name="recent_branch" value="{{ selected_recent_branch }}">
+        <label>
+            Faculty Department
+            <select name="faculty_department" required>
+                <option value="">Select Department</option>
+                {% for department in faculty_departments %}
+                    <option value="{{ department }}" {% if selected_faculty_department == department %}selected{% endif %}>{{ department }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <button class="btn secondary" type="submit">Show Faculty</button>
+    </form>
+    <div class="table-wrap">
+        {% if not selected_faculty_department %}
+            <p class="muted">Select a department first to view faculty members.</p>
+        {% else %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Photo</th>
+                        <th>Institution</th>
+                        <th>Branch</th>
+                        <th>Email</th>
+                        <th>Mobile</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for faculty in faculties %}
+                        <tr>
+                            <td>{{ faculty['full_name'] }}</td>
+                            <td>
+                                {% if faculty['profile_picture'] %}
+                                    <img class="avatar" src="{{ url_for('main.profile_picture', filename=faculty['profile_picture']) }}" alt="Faculty photo">
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>{{ faculty['institution_name'] or '-' }}</td>
+                            <td>{{ faculty['branch'] }}</td>
+                            <td>{{ faculty['email'] }}</td>
+                            <td>{{ faculty['mobile_number'] }}</td>
+                            <td>
+                                {% if current_user['role'] == 'admin' or current_user['id'] == faculty['id'] %}
+                                    <a class="btn secondary" href="{{ url_for('main.edit_faculty', user_id=faculty['id']) }}">Edit</a>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="7">No faculty accounts found for selected department.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </div>
+</section>
+{% endif %}
+
+{% if current_user['role'] == 'admin' %}
+<section class="card">
+    <h3>Recent Attendance</h3>
+    <form method="get" class="inline-form">
+        <input type="hidden" name="branch" value="{{ selected_branch }}">
+        <input type="hidden" name="year_group" value="{{ selected_year_group }}">
+        <input type="hidden" name="faculty_department" value="{{ selected_faculty_department }}">
+        {% if current_user['role'] == 'admin' %}
+            <label>
+                Attendance Branch
+                <select name="recent_branch" required>
+                    <option value="">Select Branch</option>
+                    {% for branch in branches %}
+                        <option value="{{ branch }}" {% if selected_recent_branch == branch %}selected{% endif %}>{{ branch }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+        {% else %}
+            <input type="hidden" name="recent_branch" value="{{ selected_recent_branch }}">
+            <p class="muted">Branch Scope: <strong>{{ selected_recent_branch }}</strong></p>
+        {% endif %}
+        <button class="btn secondary" type="submit">Show Attendance</button>
+    </form>
+    <div class="table-wrap">
+        {% if not selected_recent_branch %}
+            <p class="muted">Select a branch first to view recent attendance.</p>
+        {% else %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Class Roll</th>
+                        <th>Roll Number</th>
+                        <th>Name</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in recent_attendance %}
+                        <tr>
+                            <td>{{ row['attendance_date'] }}</td>
+                            <td>{{ row['class_roll_number'] or '-' }}</td>
+                            <td>{{ row['roll_number'] }}</td>
+                            <td>{{ row['full_name'] }}</td>
+                            <td>{{ row['status'] }}</td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="5">No attendance records were found for the selected branch.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </div>
+</section>
+{% endif %}
+{% endblock %}

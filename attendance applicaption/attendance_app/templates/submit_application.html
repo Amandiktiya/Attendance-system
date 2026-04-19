@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card form-card">
+    <h2>Submit Leave / Absence Application</h2>
+    <p class="muted">Enter the reason for the date you were absent. You may optionally upload a JPG, PNG, or PDF file up to 5 MB.</p>
+    <form method="post" enctype="multipart/form-data" class="grid-form">
+        <label>
+            Absent Date
+            <input type="date" name="application_date" max="{{ today }}" required>
+        </label>
+        <label>
+            Upload File (optional)
+            <input type="file" name="application_file" accept=".jpg,.jpeg,.png,.pdf">
+        </label>
+        <label class="full-span">
+            Application / Reason
+            <textarea name="reason" rows="7" required placeholder="Write your application here..."></textarea>
+        </label>
+        <button class="btn primary" type="submit">Submit Application</button>
+    </form>
+</section>
+{% endblock %}
