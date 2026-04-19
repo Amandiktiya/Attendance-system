@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card form-card">
+    <h2>Add Student</h2>
+    <p class="muted">Admins and faculty can create student profiles directly.</p>
+    <form method="post" enctype="multipart/form-data" class="grid-form">
+        <label>Full Name<input type="text" name="full_name" required></label>
+        <label>Profile Picture<input type="file" name="profile_picture" accept=".jpg,.jpeg,.png" required></label>
+        <label>Father Name<input type="text" name="father_name" required></label>
+        <label>
+            Institution Type
+            <select name="institution_type" id="add-student-institution-type" required {% if current_user and current_user['role'] == 'faculty' %}disabled{% endif %}>
+                <option value="">Select Type</option>
+                {% for value, label in institution_options %}
+                    <option value="{{ value }}" {% if current_user and current_user['role'] == 'faculty' and current_user['institution_type'] == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label id="add-student-institution-name-group">College / School / Institution Name<input type="text" name="institution_name" id="add-student-institution-name" value="{% if current_user and current_user['role'] == 'faculty' %}{{ current_user['institution_name'] }}{% endif %}" {% if current_user and current_user['role'] == 'faculty' %}readonly{% endif %}></label>
+        <label>Branch<input type="text" name="branch" value="{% if current_user and current_user['role'] == 'faculty' %}{{ current_user['branch'] }}{% endif %}" required {% if current_user and current_user['role'] == 'faculty' %}readonly{% endif %}></label>
+        {% if current_user and current_user['role'] == 'faculty' %}
+            <input type="hidden" name="institution_type" value="{{ current_user['institution_type'] }}">
+        {% endif %}
+        <label>Semester<input type="text" name="semester" required></label>
+        <label>Year<input type="text" name="year" required></label>
+        <label>Date of Birth<input type="date" name="dob" required></label>
+        <label>Class Roll Number<input type="text" name="class_roll_number" inputmode="numeric" required></label>
+        <label>Roll Number<input type="text" name="roll_number" required></label>
+        <label>Registration Number<input type="text" name="registration_number" required></label>
+        <label>Gmail<input type="email" name="gmail" required></label>
+        <label>Alternate Email<input type="email" name="email" required></label>
+        <label>Mobile Number<input type="text" name="mobile_number" maxlength="10" required></label>
+        <label>Temporary Password<input type="password" name="password" required></label>
+        <button class="btn primary" type="submit">Save Student</button>
+    </form>
+</section>
+
+<script>
+    const addStudentInstitutionType = document.getElementById("add-student-institution-type");
+    const addStudentInstitutionNameGroup = document.getElementById("add-student-institution-name-group");
+    const addStudentInstitutionName = document.getElementById("add-student-institution-name");
+
+    function syncAddStudentInstitutionField() {
+        const needsInstitution = addStudentInstitutionType.value && addStudentInstitutionType.value !== "other_institution";
+        addStudentInstitutionNameGroup.style.display = needsInstitution ? "flex" : "none";
+        addStudentInstitutionName.required = needsInstitution;
+        if (!needsInstitution) {
+            addStudentInstitutionName.value = "";
+        }
+    }
+
+    addStudentInstitutionType.addEventListener("change", syncAddStudentInstitutionField);
+    syncAddStudentInstitutionField();
+</script>
+{% endblock %}

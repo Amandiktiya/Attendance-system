@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card">
+    <div class="section-head">
+        <div class="section-head profile-edit-head">
+            <a class="icon-btn" href="{{ url_for('main.dashboard') }}" aria-label="Back to dashboard" title="Back to dashboard">&larr;</a>
+            <h2>Student Applications</h2>
+        </div>
+        {% if current_user['role'] == 'student' %}
+            <a class="btn primary" href="{{ url_for('main.submit_application') }}">New Application</a>
+        {% endif %}
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date Range</th>
+                    <th>Student</th>
+                    <th>Roll Number</th>
+                    <th>Branch</th>
+                    <th>Year/Sem</th>
+                    <th>Application</th>
+                    <th>Status</th>
+                    <th>File</th>
+                    {% if current_user['role'] in ['admin', 'faculty'] %}
+                        <th>Action</th>
+                    {% endif %}
+                    <th>Submitted At</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in applications %}
+                    <tr>
+                        <td>
+                            {% set start_date = item['start_date'] or item['application_date'] %}
+                            {% set end_date = item['end_date'] or item['application_date'] %}
+                            {% if start_date == end_date %}
+                                {{ start_date }}
+                            {% else %}
+                                {{ start_date }} to {{ end_date }}
+                            {% endif %}
+                        </td>
+                        <td>{{ item['full_name'] }}</td>
+                        <td>{{ item['roll_number'] }}</td>
+                        <td>{{ item['branch'] }}</td>
+                        <td>{{ item['year'] }} / {{ item['semester'] }}</td>
+                        <td>{{ item['reason'] }}</td>
+                        <td>{{ item['status']|title }}</td>
+                        <td>
+                            {% if item['file_name'] %}
+                                <div class="actions">
+                                    <a class="btn secondary" href="{{ url_for('main.view_application_file', application_id=item['id']) }}" target="_blank">View</a>
+                                    <a class="btn secondary" href="{{ url_for('main.download_application', application_id=item['id']) }}" data-full-reload="true">Download</a>
+                                </div>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        {% if current_user['role'] in ['admin', 'faculty'] %}
+                            <td class="actions">
+                                {% if item['status'] == 'submitted' %}
+                                    <form method="post" action="{{ url_for('main.process_application', application_id=item['id'], action='approve') }}">
+                                        <button class="btn primary" type="submit">Accept</button>
+                                    </form>
+                                    <form method="post" action="{{ url_for('main.process_application', application_id=item['id'], action='reject') }}">
+                                        <button class="btn secondary" type="submit">Reject</button>
+                                    </form>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        {% endif %}
+                        <td>{{ item['created_at'] }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="{% if current_user['role'] in ['admin', 'faculty'] %}10{% else %}9{% endif %}">No applications submitted yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
