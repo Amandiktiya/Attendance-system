@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Attendance Hub | Smart Attendance Management System{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}Attendance Hub helps schools, colleges, faculty, and students manage attendance, profile approvals, reports, and daily academic records in one place.{% endblock %}">
+    <meta name="keywords" content="{% block meta_keywords %}attendance management system, student attendance, faculty dashboard, college attendance app, school attendance software{% endblock %}">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#0f766e">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{% block og_title %}Attendance Hub | Smart Attendance Management System{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Track attendance, manage student records, review approvals, and export reports from one organized dashboard.{% endblock %}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=mobile-label-fix-1">
+    {% block head_extra %}{% endblock %}
+</head>
+<body>
+    <header class="site-header">
+        <div class="brand-block">
+            <p class="eyebrow">Attendance Management System</p>
+            <h1><a href="{{ url_for('main.home') }}">Attendance Hub</a></h1>
+            <p class="brand-copy">A cleaner way to manage student attendance, approvals, and academic records.</p>
+        </div>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span class="sr-only">Menu</span>
+        </button>
+        <nav id="primary-nav" aria-label="Primary navigation">
+            <a href="{{ url_for('main.home') }}">Home</a>
+            {% if current_user %}
+                <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
+                <a href="{{ url_for('main.applications') }}">Applications</a>
+                <a href="{{ url_for('main.attendance_report') }}">Reports</a>
+                {% if current_user['role'] in ['admin', 'faculty'] %}
+                    <a href="{{ url_for('main.approvals') }}">Approvals{% if pending_count %} ({{ pending_count }}){% endif %}</a>
+                {% endif %}
+                {% if current_user['role'] in ['admin', 'faculty'] %}
+                    <a href="{{ url_for('main.attendance') }}">Mark Attendance</a>
+                    <a href="{{ url_for('main.add_student') }}">Add Student</a>
+                {% endif %}
+                {% if current_user['role'] == 'admin' %}
+                    <a href="{{ url_for('main.add_faculty') }}">Add Faculty</a>
+                {% endif %}
+                <a href="{{ url_for('main.logout') }}">Logout</a>
+            {% else %}
+                <a href="{{ url_for('main.login') }}">Login</a>
+                <a href="{{ url_for('main.student_register') }}">Student Sign Up</a>
+            {% endif %}
+        </nav>
+    </header>
+
+    <main class="page-shell">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <section class="flash-stack">
+                    {% for category, message in messages %}
+                        <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </section>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+    <script>
+        (function () {
+            function bootPage() {
+                const navToggle = document.querySelector(".nav-toggle");
+                const nav = document.getElementById("primary-nav");
+
+                if (navToggle && nav) {
+                    navToggle.addEventListener("click", function () {
+                        const isOpen = document.body.classList.toggle("nav-open");
+                        navToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+                    });
+                }
+
+                document.querySelectorAll(".table-wrap table:not(.mini-table)").forEach(function (table) {
+                    const headings = Array.from(table.querySelectorAll("thead th")).map(function (heading) {
+                        return heading.textContent.trim();
+                    });
+
+                    table.querySelectorAll("tbody tr").forEach(function (row) {
+                        row.querySelectorAll("td").forEach(function (cell, index) {
+                            if (headings[index]) {
+                                cell.setAttribute("data-label", headings[index]);
+                            }
+                        });
+                    });
+                });
+            }
+
+            function runInlineScripts(container) {
+                container.querySelectorAll("script").forEach(function (script) {
+                    if (!script.src) {
+                        Function(script.textContent)();
+                    }
+                });
+            }
+
+            function shouldUseAjaxLink(link, event) {
+                if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+                    return false;
+                }
+                if (link.target || link.hasAttribute("download") || link.dataset.fullReload === "true") {
+                    return false;
+                }
+                const url = new URL(link.href, window.location.href);
+                return url.origin === window.location.origin && !url.hash;
+            }
+
+            function setLoading(isLoading) {
+                const shell = document.querySelector(".page-shell");
+                if (shell) {
+                    shell.classList.toggle("is-loading", isLoading);
+                }
+            }
+
+            async function loadPage(url, options) {
+                setLoading(true);
+                try {
+                    const response = await fetch(url, Object.assign({
+                        headers: { "X-Requested-With": "fetch" }
+                    }, options || {}));
+                    const contentType = response.headers.get("content-type") || "";
+                    if (!contentType.includes("text/html")) {
+                        window.location.href = url;
+                        return;
+                    }
+
+                    const html = await response.text();
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, "text/html");
+                    const nextHeader = doc.querySelector(".site-header");
+                    const nextMain = doc.querySelector(".page-shell");
+                    const header = document.querySelector(".site-header");
+                    const main = document.querySelector(".page-shell");
+
+                    if (!nextHeader || !nextMain || !header || !main) {
+                        window.location.href = url;
+                        return;
+                    }
+
+                    document.title = doc.title;
+                    if (response.url && response.url !== window.location.href) {
+                        history.replaceState({}, "", response.url);
+                    }
+                    header.innerHTML = nextHeader.innerHTML;
+                    main.innerHTML = nextMain.innerHTML;
+                    document.body.classList.remove("nav-open");
+                    runInlineScripts(main);
+                    bootPage();
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                } catch (error) {
+                    window.location.href = url;
+                } finally {
+                    setLoading(false);
+                }
+            }
+
+            document.addEventListener("click", function (event) {
+                const link = event.target.closest("a[href]");
+                if (!link || !shouldUseAjaxLink(link, event)) {
+                    return;
+                }
+                event.preventDefault();
+                const url = link.href;
+                history.pushState({}, "", url);
+                loadPage(url);
+            });
+
+            document.addEventListener("submit", function (event) {
+                const form = event.target.closest("form");
+                if (!form || form.dataset.fullReload === "true") {
+                    return;
+                }
+
+                const submitter = event.submitter;
+                if (submitter && submitter.name === "export") {
+                    return;
+                }
+
+                const method = (form.method || "get").toLowerCase();
+                const action = new URL(form.action || window.location.href, window.location.href);
+                if (action.origin !== window.location.origin) {
+                    return;
+                }
+
+                event.preventDefault();
+                if (method === "get") {
+                    const params = new URLSearchParams(new FormData(form));
+                    if (submitter && submitter.name) {
+                        params.set(submitter.name, submitter.value);
+                    }
+                    action.search = params.toString();
+                    history.pushState({}, "", action.href);
+                    loadPage(action.href);
+                    return;
+                }
+
+                const body = submitter ? new FormData(form, submitter) : new FormData(form);
+                loadPage(action.href, { method: form.method, body: body });
+            });
+
+            window.addEventListener("popstate", function () {
+                loadPage(window.location.href);
+            });
+
+            bootPage();
+        })();
+    </script>
+</body>
+</html>
