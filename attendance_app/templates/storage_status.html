@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card form-card">
+    <div class="section-head profile-edit-head">
+        <a class="icon-btn" href="{{ url_for('main.dashboard') }}" aria-label="Back to dashboard" title="Back to dashboard">&larr;</a>
+        <h2>Storage Status</h2>
+    </div>
+    <div class="profile-grid">
+        <div><span>Enabled</span><strong>{{ 'Yes' if status.enabled else 'No' }}</strong></div>
+        <div><span>Supabase URL</span><strong>{{ 'Set' if status.url_set else 'Missing' }}</strong></div>
+        <div><span>Service Role Key</span><strong>{{ 'Set' if status.service_key_set else 'Missing' }}</strong></div>
+        <div><span>Bucket</span><strong>{{ status.bucket or 'Missing' }}</strong></div>
+        <div><span>Upload Test</span><strong>{{ 'Pass' if status.ok else 'Fail' }}</strong></div>
+    </div>
+    <p class="muted">{{ status.message }}</p>
+</section>
+{% endblock %}

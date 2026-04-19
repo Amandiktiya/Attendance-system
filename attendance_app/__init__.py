@@ -1,3 +1,5 @@
+import os
+
 from flask import Flask
 
 from .database import init_app
@@ -13,6 +15,9 @@ def create_app():
         MAX_CONTENT_LENGTH=5 * 1024 * 1024,
         APPLICATION_UPLOAD_FOLDER="uploads/applications",
         PROFILE_UPLOAD_FOLDER="uploads/profiles",
+        SUPABASE_URL=os.environ.get("SUPABASE_URL", ""),
+        SUPABASE_SERVICE_ROLE_KEY=os.environ.get("SUPABASE_SERVICE_ROLE_KEY", ""),
+        SUPABASE_STORAGE_BUCKET=os.environ.get("SUPABASE_STORAGE_BUCKET", ""),
     )
 
     init_app(app)

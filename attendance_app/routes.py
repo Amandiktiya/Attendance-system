@@ -21,6 +21,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from .auth import current_user, login_required
 from .database import get_db
+from .storage import send_stored_file, storage_status, supabase_enabled, upload_file
 from .utils import attendance_workbook, build_otp, is_valid_mobile, one_year_ago_iso, otp_expiry, today_iso
 
 bp = Blueprint("main", __name__)
@@ -332,7 +333,10 @@ def validate_application_file(file_storage):
         return None, "Application file size must be less than 5 MB."
 
     stored_name = f"{uuid.uuid4().hex}{extension}"
-    file_storage.save(application_upload_dir() / stored_name)
+    if supabase_enabled():
+        upload_file("applications", stored_name, file_storage)
+    else:
+        file_storage.save(application_upload_dir() / stored_name)
     return (stored_name, original_name, extension.lstrip(".")), None
 
 
@@ -401,7 +405,10 @@ def save_profile_picture(file_storage, required=False):
     if size > MAX_APPLICATION_SIZE:
         return None, "Profile picture size must be less than 5 MB."
     stored_name = f"{uuid.uuid4().hex}{extension}"
-    file_storage.save(profile_upload_dir() / stored_name)
+    if supabase_enabled():
+        upload_file("profiles", stored_name, file_storage)
+    else:
+        file_storage.save(profile_upload_dir() / stored_name)
     return stored_name, None
 
 
@@ -720,7 +727,16 @@ def login():
 @bp.route("/profiles/<path:filename>")
 @login_required("admin", "faculty", "student")
 def profile_picture(filename):
+    if supabase_enabled():
+        return send_stored_file("profiles", filename)
     return send_from_directory(profile_upload_dir(), filename)
+
+
+@bp.route("/storage/status")
+@login_required("admin")
+def storage_diagnostics():
+    status = storage_status()
+    return render_template("storage_status.html", status=status)
 
 
 @bp.route("/logout")
@@ -1170,12 +1186,10 @@ def download_application(application_id):
     if not user_can_access_application(user, application):
         flash("You cannot access this file.", "error")
         return redirect(url_for("main.applications"))
-    return send_from_directory(
-        application_upload_dir(),
-        application["file_name"],
-        as_attachment=True,
-        download_name=application["original_file_name"] or application["file_name"],
-    )
+    download_name = application["original_file_name"] or application["file_name"]
+    if supabase_enabled():
+        return send_stored_file("applications", application["file_name"], download_name=download_name, as_attachment=True)
+    return send_from_directory(application_upload_dir(), application["file_name"], as_attachment=True, download_name=download_name)
 
 
 @bp.route("/applications/<int:application_id>/view")
@@ -1189,12 +1203,10 @@ def view_application_file(application_id):
     if not user_can_access_application(user, application):
         flash("You cannot access this file.", "error")
         return redirect(url_for("main.applications"))
-    return send_from_directory(
-        application_upload_dir(),
-        application["file_name"],
-        as_attachment=False,
-        download_name=application["original_file_name"] or application["file_name"],
-    )
+    download_name = application["original_file_name"] or application["file_name"]
+    if supabase_enabled():
+        return send_stored_file("applications", application["file_name"], download_name=download_name, as_attachment=False)
+    return send_from_directory(application_upload_dir(), application["file_name"], as_attachment=False, download_name=download_name)
 
 
 @bp.route("/applications/<int:application_id>/<action>", methods=["POST"])
