@@ -1838,3 +1838,77 @@ tbody tr:hover {
         text-align: left;
     }
 }
+
+@media (min-width: 901px) {
+    .site-header {
+        position: static;
+        padding: 0.8rem 5vw;
+    }
+
+    .brand-block h1 {
+        font-size: 1.55rem;
+    }
+
+    .brand-copy {
+        margin-top: 0.2rem;
+        font-size: 0.88rem;
+    }
+
+    .page-shell {
+        margin: 0.85rem auto 1.5rem;
+    }
+
+    .animated-login-page {
+        min-height: calc(100vh - 150px);
+        align-items: center;
+        padding: 0;
+    }
+
+    .animated-auth-container {
+        width: min(1000px, 96vw);
+        min-height: 0;
+        height: min(660px, calc(100vh - 165px));
+    }
+
+    .animated-form-box {
+        padding: 1.25rem 2rem;
+    }
+
+    .animated-form-box.login {
+        overflow-y: auto;
+    }
+
+    .animated-form-box form {
+        padding-bottom: 0;
+    }
+
+    .animated-auth-container h1 {
+        font-size: clamp(1.8rem, 3vw, 2.35rem);
+    }
+
+    .auth-note {
+        margin: 0.45rem 0 0.7rem;
+        line-height: 1.45;
+    }
+
+    .input-box {
+        margin: 9px 0;
+    }
+
+    .input-box input,
+    .input-box select {
+        min-height: 44px;
+        padding: 0.72rem 5.5rem 0.72rem 0.9rem;
+    }
+
+    .animated-btn {
+        min-height: 44px;
+    }
+
+    .login-helper {
+        margin-top: 0.6rem;
+        padding-bottom: 0;
+        font-size: 0.82rem;
+        line-height: 1.4;
+    }
+}
