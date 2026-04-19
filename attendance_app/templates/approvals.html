@@ -4,7 +4,10 @@
 <section class="card">
     <div class="section-head">
         <div>
-            <h2>Profile Edit Requests</h2>
+            <div class="section-head profile-edit-head">
+                <a class="icon-btn" href="{{ url_for('main.dashboard') }}" aria-label="Back to dashboard" title="Back to dashboard">&larr;</a>
+                <h2>Profile Edit Requests</h2>
+            </div>
             <p class="muted">Filter student and faculty profile edit requests by role.</p>
         </div>
         <div class="actions">
@@ -63,11 +66,11 @@
                         </td>
                         <td>{{ item['created_at'] }}</td>
                         <td class="actions">
-                            <form method="post" action="{{ url_for('main.process_approval', change_id=item['id'], action='approve') }}">
+                            <form method="post" action="{{ url_for('main.process_approval', change_id=item['id'], action='approve') }}" data-ajax-preserve="true">
                                 <input type="hidden" name="type" value="{{ selected_request_type }}">
                                 <button class="btn primary" type="submit">Approve</button>
                             </form>
-                            <form method="post" action="{{ url_for('main.process_approval', change_id=item['id'], action='reject') }}">
+                            <form method="post" action="{{ url_for('main.process_approval', change_id=item['id'], action='reject') }}" data-ajax-preserve="true">
                                 <input type="hidden" name="type" value="{{ selected_request_type }}">
                                 <button class="btn secondary" type="submit">Reject</button>
                             </form>

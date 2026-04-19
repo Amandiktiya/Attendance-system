@@ -2,12 +2,14 @@
 
 {% block content %}
 <section class="card form-card">
-    <h2>Add Faculty</h2>
+    <div class="section-head profile-edit-head">
+        <a class="icon-btn" href="{{ url_for('main.dashboard') }}" aria-label="Back to dashboard" title="Back to dashboard">&larr;</a>
+        <h2>Add Faculty</h2>
+    </div>
     <p class="muted">Only an admin can create a faculty account.</p>
     <form method="post" enctype="multipart/form-data" class="grid-form">
         <label>Full Name<input type="text" name="full_name" required></label>
         <label>Profile Picture<input type="file" name="profile_picture" accept=".jpg,.jpeg,.png" required></label>
-        <label>Father Name<input type="text" name="father_name"></label>
         <label>
             Institution Type
             <select name="institution_type" id="add-faculty-institution-type" required>

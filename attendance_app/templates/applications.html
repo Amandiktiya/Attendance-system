@@ -17,9 +17,9 @@
                 <tr>
                     <th>Date Range</th>
                     <th>Student</th>
-                    <th>Roll Number</th>
+                    <th>UBTER Roll Number</th>
                     <th>Branch</th>
-                    <th>Year/Sem</th>
+                    <th>Year (Academic)/Sem</th>
                     <th>Application</th>
                     <th>Status</th>
                     <th>File</th>
@@ -60,10 +60,10 @@
                         {% if current_user['role'] in ['admin', 'faculty'] %}
                             <td class="actions">
                                 {% if item['status'] == 'submitted' %}
-                                    <form method="post" action="{{ url_for('main.process_application', application_id=item['id'], action='approve') }}">
+                                    <form method="post" action="{{ url_for('main.process_application', application_id=item['id'], action='approve') }}" data-ajax-preserve="true">
                                         <button class="btn primary" type="submit">Accept</button>
                                     </form>
-                                    <form method="post" action="{{ url_for('main.process_application', application_id=item['id'], action='reject') }}">
+                                    <form method="post" action="{{ url_for('main.process_application', application_id=item['id'], action='reject') }}" data-ajax-preserve="true">
                                         <button class="btn secondary" type="submit">Reject</button>
                                     </form>
                                 {% else %}

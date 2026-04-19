@@ -92,7 +92,7 @@
                 <tr>
                     <th>Class Roll</th>
                     <th>Photo</th>
-                    <th>Roll Number</th>
+                    <th>UBTER Roll Number</th>
                     <th>Name</th>
                     <th>Institution</th>
                     <th>Branch</th>
@@ -116,7 +116,7 @@
                         <td>{{ student['branch'] }}</td>
                         <td class="actions">
                             <a class="btn secondary" href="{{ url_for('main.edit_student', user_id=student['id']) }}">Edit</a>
-                            <form method="post" action="{{ url_for('main.delete_student', user_id=student['id']) }}">
+                            <form method="post" action="{{ url_for('main.delete_student', user_id=student['id']) }}" data-ajax-preserve="true">
                                 <button class="btn secondary" type="submit">Delete</button>
                             </form>
                         </td>
@@ -182,7 +182,7 @@
                             <td>{{ faculty['mobile_number'] }}</td>
                             <td class="actions">
                                 <a class="btn secondary" href="{{ url_for('main.edit_faculty', user_id=faculty['id']) }}">Edit</a>
-                                <form method="post" action="{{ url_for('main.delete_faculty', user_id=faculty['id']) }}">
+                                <form method="post" action="{{ url_for('main.delete_faculty', user_id=faculty['id']) }}" data-ajax-preserve="true">
                                     <button class="btn secondary" type="submit">Delete</button>
                                 </form>
                             </td>
@@ -229,7 +229,7 @@
                     <tr>
                         <th>Date</th>
                         <th>Class Roll</th>
-                        <th>Roll Number</th>
+                        <th>UBTER Roll Number</th>
                         <th>Name</th>
                         <th>Status</th>
                     </tr>

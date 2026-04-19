@@ -2,9 +2,9 @@
 
 {% block content %}
 <section class="card form-card">
-    <div class="section-head">
+    <div class="section-head profile-edit-head">
+        <a class="icon-btn" href="{{ url_for('main.dashboard') }}" aria-label="Back to dashboard" title="Back to dashboard">&larr;</a>
         <h2>Edit Faculty</h2>
-        <a class="btn secondary" href="{{ url_for('main.dashboard') }}">Back</a>
     </div>
     <p class="muted">Admins can update faculty details, and faculty members can update their own profile.</p>
     {% if faculty['profile_picture'] %}
@@ -13,7 +13,6 @@
     <form method="post" enctype="multipart/form-data" class="grid-form">
         <label>Full Name<input type="text" name="full_name" value="{{ faculty['full_name'] }}" required></label>
         <label>Profile Picture<input type="file" name="profile_picture" accept=".jpg,.jpeg,.png"></label>
-        <label>Father Name<input type="text" name="father_name" value="{{ faculty['father_name'] }}"></label>
         <label>
             Institution Type
             <select name="institution_type" id="edit-faculty-institution-type" required>

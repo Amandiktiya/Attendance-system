@@ -148,10 +148,12 @@ def student_identifier_query(identifier):
     )
 
 
-def validate_profile_form(form, role, editing_user_id=None):
+def validate_profile_form(form, role, editing_user_id=None, require_registration_number=True):
     db = get_db()
     errors = []
-    required_fields = ["full_name", "email", "mobile_number", "institution_type"]
+    required_fields = ["full_name", "mobile_number", "institution_type"]
+    if role != "student":
+        required_fields.append("email")
     if role == "student":
         required_fields.extend(
             [
@@ -162,10 +164,11 @@ def validate_profile_form(form, role, editing_user_id=None):
                 "year",
                 "dob",
                 "roll_number",
-                "registration_number",
                 "gmail",
             ]
         )
+        if require_registration_number:
+            required_fields.append("registration_number")
     else:
         required_fields.append("branch")
 
@@ -231,7 +234,6 @@ def validate_profile_form(form, role, editing_user_id=None):
 def profile_payload(form, role):
     payload = {
         "full_name": form.get("full_name", "").strip(),
-        "father_name": form.get("father_name", "").strip(),
         "branch": form.get("branch", "").strip(),
         "semester": form.get("semester", "").strip(),
         "year": form.get("year", "").strip(),
@@ -247,6 +249,7 @@ def profile_payload(form, role):
     if role == "student":
         payload.update(
             {
+                "father_name": form.get("father_name", "").strip(),
                 "class_roll_number": form.get("class_roll_number", "").strip(),
                 "roll_number": form.get("roll_number", "").strip(),
                 "registration_number": form.get("registration_number", "").strip(),
@@ -409,7 +412,7 @@ def update_user_record(user_id, form, role, allow_password_update=True):
     db = get_db()
     params = {
         "full_name": form.get("full_name", "").strip(),
-        "father_name": form.get("father_name", "").strip(),
+        "father_name": form.get("father_name", "").strip() if role == "student" else "",
         "branch": form.get("branch", "").strip(),
         "semester": form.get("semester", "").strip(),
         "year": form.get("year", "").strip(),
@@ -431,7 +434,6 @@ def update_user_record(user_id, form, role, allow_password_update=True):
             """
             UPDATE users
             SET full_name = :full_name,
-                father_name = :father_name,
                 profile_picture = COALESCE(NULLIF(:profile_picture, ''), profile_picture),
                 institution_type = :institution_type,
                 institution_name = :institution_name,
@@ -760,12 +762,12 @@ def student_register():
         else:
             form = request.form
             registration_mobile = form.get("mobile_number", "").strip()
-            required_fields = ["full_name", "father_name", "institution_type", "branch", "semester", "year", "dob", "class_roll_number", "roll_number", "registration_number", "gmail", "email", "mobile_number", "password", "otp_code"]
+            required_fields = ["full_name", "father_name", "institution_type", "branch", "semester", "year", "dob", "class_roll_number", "roll_number", "gmail", "mobile_number", "password", "otp_code"]
             if any(not form.get(field, "").strip() for field in required_fields):
                 flash("All fields are required. The account cannot be created with an incomplete form.", "error")
                 return render_template("student_register.html", otp_value=session.get("pending_student_otp"), registration_mobile=registration_mobile)
 
-            validation_errors = validate_profile_form(form, "student")
+            validation_errors = validate_profile_form(form, "student", require_registration_number=False)
             if validation_errors:
                 flash(validation_errors[0], "error")
                 return render_template("student_register.html", otp_value=session.get("pending_student_otp"), registration_mobile=registration_mobile)
@@ -814,7 +816,7 @@ def student_register():
                     form.get("institution_name", "").strip(),
                     form["class_roll_number"].strip(),
                     form["roll_number"].strip(),
-                    form["registration_number"].strip(),
+                    form["registration_number"].strip() or None,
                     form["full_name"].strip(),
                     form["father_name"].strip(),
                     form["branch"].strip(),
@@ -823,7 +825,7 @@ def student_register():
                     form["dob"].strip(),
                     form["mobile_number"].strip(),
                     form["gmail"].strip(),
-                    form["email"].strip(),
+                    form["email"].strip() or None,
                     generate_password_hash(form["password"]),
                     1,
                 ),
@@ -991,7 +993,7 @@ def add_faculty():
             """,
             (
                 "faculty", profile_picture, form["institution_type"].strip(), form.get("institution_name", "").strip(), form["full_name"].strip(),
-                form.get("father_name", "").strip(), form["branch"].strip(), "", "", "", form["mobile_number"].strip(),
+                "", form["branch"].strip(), "", "", "", form["mobile_number"].strip(),
                 form["email"].strip(), form["email"].strip(), generate_password_hash(form["password"]), 1, user["id"],
             ),
         )

@@ -177,7 +177,11 @@
                 event.preventDefault();
                 const url = link.href;
                 history.pushState({}, "", url);
-                loadPage(url);
+                const preserveLink = Boolean(link.closest(".page-shell")) && link.classList.contains("btn");
+                loadPage(url, {
+                    preserveScroll: preserveLink,
+                    updateHeader: !preserveLink
+                });
             });
 
             document.addEventListener("submit", function (event) {
@@ -210,7 +214,13 @@
                 }
 
                 const body = submitter ? new FormData(form, submitter) : new FormData(form);
-                loadPage(action.href, { method: form.method, body: body });
+                const preserveForm = form.dataset.ajaxPreserve !== "false";
+                loadPage(action.href, {
+                    method: form.method,
+                    body: body,
+                    preserveScroll: preserveForm,
+                    updateHeader: !preserveForm
+                });
             });
 
             window.addEventListener("popstate", function () {

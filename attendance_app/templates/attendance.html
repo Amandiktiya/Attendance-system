@@ -3,7 +3,10 @@
 {% block content %}
 <section class="card">
     <div class="section-head">
-        <h2>Mark Attendance</h2>
+        <div class="section-head profile-edit-head">
+            <a class="icon-btn" href="{{ url_for('main.dashboard') }}" aria-label="Back to dashboard" title="Back to dashboard">&larr;</a>
+            <h2>Mark Attendance</h2>
+        </div>
         <form method="get" class="inline-form">
             <label>
                 Date
@@ -48,7 +51,7 @@
                             <tr>
                                 <th>Institution</th>
                                 <th>Class Roll</th>
-                                <th>Roll Number</th>
+                                <th>UBTER Roll Number</th>
                                 <th>Name</th>
                                 <th>Branch</th>
                                 <th>Status</th>
