@@ -2,12 +2,26 @@
 
 {% block content %}
 <section class="card form-card">
-    <h2>Submit Leave / Absence Application</h2>
+    <div class="section-head profile-edit-head">
+        <a class="icon-btn" href="{{ url_for('main.dashboard') }}" aria-label="Back to dashboard" title="Back to dashboard">&larr;</a>
+        <h2>Submit Leave / Absence Application</h2>
+    </div>
     <p class="muted">Enter the reason for the date you were absent. You may optionally upload a JPG, PNG, or PDF file up to 5 MB.</p>
     <form method="post" enctype="multipart/form-data" class="grid-form">
         <label>
-            Absent Date
-            <input type="date" name="application_date" max="{{ today }}" required>
+            Date Type
+            <select name="date_mode" id="application-date-mode">
+                <option value="single">Single Day</option>
+                <option value="multiple">Multiple Days</option>
+            </select>
+        </label>
+        <label>
+            From Date
+            <input type="date" name="start_date" id="application-start-date" required>
+        </label>
+        <label id="application-end-date-group">
+            To Date
+            <input type="date" name="end_date" id="application-end-date">
         </label>
         <label>
             Upload File (optional)
@@ -20,4 +34,25 @@
         <button class="btn primary" type="submit">Submit Application</button>
     </form>
 </section>
+
+<script>
+    const applicationDateMode = document.getElementById("application-date-mode");
+    const applicationStartDate = document.getElementById("application-start-date");
+    const applicationEndDateGroup = document.getElementById("application-end-date-group");
+    const applicationEndDate = document.getElementById("application-end-date");
+
+    function syncApplicationDateMode() {
+        const isMultiple = applicationDateMode.value === "multiple";
+        applicationEndDateGroup.style.display = isMultiple ? "flex" : "none";
+        applicationEndDate.required = isMultiple;
+        applicationEndDate.min = applicationStartDate.value || "";
+        if (!isMultiple) {
+            applicationEndDate.value = "";
+        }
+    }
+
+    applicationDateMode.addEventListener("change", syncApplicationDateMode);
+    applicationStartDate.addEventListener("change", syncApplicationDateMode);
+    syncApplicationDateMode();
+</script>
 {% endblock %}

@@ -68,6 +68,7 @@
                                             <option value="Present" {% if student['status'] == 'Present' %}selected{% endif %}>Present</option>
                                             <option value="Absent" {% if student['status'] == 'Absent' %}selected{% endif %}>Absent</option>
                                             <option value="Late" {% if student['status'] == 'Late' %}selected{% endif %}>Late</option>
+                                            <option value="Leave" {% if student['status'] == 'Leave' %}selected{% endif %}>Leave</option>
                                         </select>
                                     </td>
                                     <td><input type="text" name="remarks_{{ student['id'] }}" value="{{ student['remarks'] or '' }}" placeholder="Optional"></td>

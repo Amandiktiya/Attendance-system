@@ -40,9 +40,9 @@ body {
     line-height: 1.5;
     color: var(--text);
     background:
-        radial-gradient(circle at top left, rgba(15, 118, 110, 0.14), transparent 28%),
-        radial-gradient(circle at top right, rgba(245, 158, 11, 0.12), transparent 24%),
-        linear-gradient(180deg, #f8fcfb 0%, #eef5f3 48%, #f7fbfa 100%);
+        radial-gradient(circle at top left, rgba(15, 118, 110, 0.14), transparent 48%),
+        radial-gradient(circle at top right, rgba(139, 104, 45, 0.1), transparent 34%),
+        linear-gradient(180deg, #43d8b3 0%, #5fc3a6 48%, #8daea6cf 100%);
 }
 
 a {
@@ -83,7 +83,7 @@ p {
     gap: 1.5rem;
     padding: clamp(0.9rem, 1.8vw, 1.2rem) 5vw;
     background: rgba(255, 255, 255, 0.84);
-    border-bottom: 1px solid rgba(15, 118, 110, 0.12);
+    border-bottom: 1px solid rgba(52, 151, 143, 0.274);
     backdrop-filter: blur(18px);
 }
 
@@ -119,7 +119,7 @@ p {
     border-radius: 14px;
     color: var(--primary-dark);
     background: #fff;
-    box-shadow: 0 10px 24px rgba(23, 49, 58, 0.08);
+    box-shadow: 0 10px 24px rgba(7, 177, 234, 0.455);
 }
 
 .nav-toggle span:not(.sr-only) {
@@ -142,8 +142,8 @@ p {
 .site-header nav a:hover,
 .site-header nav a:focus-visible {
     color: var(--primary-dark);
-    background: rgba(15, 118, 110, 0.08);
-    box-shadow: 0 10px 24px rgba(15, 118, 110, 0.1);
+    background: rgba(14, 206, 190, 0.947);
+    box-shadow: 0 10px 24px rgba(26, 237, 220, 0.984);
     transform: translateY(-2px);
     outline: none;
 }
@@ -151,6 +151,12 @@ p {
 .page-shell {
     width: min(1180px, 92vw);
     margin: clamp(1rem, 2vw, 2rem) auto 3rem;
+}
+
+.page-shell.is-loading {
+    opacity: 0.72;
+    pointer-events: none;
+    transition: opacity 0.18s ease;
 }
 
 .hero,
@@ -172,8 +178,8 @@ p {
 
 .card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 18px 40px rgba(23, 49, 58, 0.12);
-    border-color: rgba(15, 118, 110, 0.22);
+    box-shadow: 0 18px 40px rgba(27, 182, 233, 0.085);
+    border-color: rgba(70, 204, 193, 0.932);
 }
 
 .info-card {
@@ -239,11 +245,31 @@ p {
     background: rgba(147, 218, 186, 0.19);
     border: 1px solid rgba(17, 154, 143, 0.627);
     justify-content: center;
-    display: flex;
+}
+
+.icon-btn {
+    display: inline-flex;
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
     align-items: center;
-    margin-top: -20px;
-    
-  
+    justify-content: center;
+    border: 1px solid rgba(17, 154, 143, 0.42);
+    border-radius: 50%;
+    color: var(--primary-dark);
+    background: rgba(147, 218, 186, 0.19);
+    font-size: 1.4rem;
+    font-weight: 800;
+    line-height: 1;
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.icon-btn:hover,
+.icon-btn:focus-visible {
+    color: #fff;
+    background: var(--primary);
+    box-shadow: 0 10px 24px rgba(15, 118, 110, 0.18);
+    outline: none;
 }
   
 .actions,
@@ -252,10 +278,68 @@ p {
     display: flex;
     flex-wrap: wrap;
     gap: 0.8rem;
-    align-items: end;
+    align-items: center;
+    justify-content: center;
+}
+
+.actions {
+    justify-content: flex-start;
     justify-content: center;
     align-items: center;
-    
+
+}
+
+.inline-form {
+    justify-content: flex-start;
+}
+
+.section-head {
+    justify-content: space-between;
+}
+
+.section-head h3 {
+    margin-right: auto;
+}
+
+.section-head h2,
+.section-head h3 {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.profile-edit-head {
+    justify-content: flex-start;
+    align-items: center;
+    gap: 0.85rem;
+}
+
+.profile-edit-head h2 {
+    margin-right: 0;
+}
+
+.dashboard-page {
+    display: grid;
+    gap: 1.2rem;
+}
+
+.dashboard-page .card {
+    min-width: 0;
+}
+
+.dashboard-page .card:hover,
+.dashboard-page .btn:hover,
+.dashboard-page .btn:focus-visible,
+.dashboard-page tbody tr:hover {
+    transform: none;
+}
+
+.dashboard-page .hero.compact {
+    margin-bottom: 0;
+}
+
+.dashboard-page .actions .btn,
+.dashboard-page .actions form {
+    flex: 0 0 auto;
 }
 
 .form-card {
@@ -1418,6 +1502,10 @@ tbody tr:hover {
         width: 100%;
     }
 
+    .section-head .icon-btn {
+        width: 44px;
+    }
+
     .btn,
     .animated-btn {
         width: 100%;
@@ -1728,6 +1816,10 @@ tbody tr:hover {
     .inline-form > *,
     .inline-form label {
         width: 100%;
+    }
+
+    .section-head .icon-btn {
+        width: 44px;
     }
 
     .btn,

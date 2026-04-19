@@ -2,7 +2,10 @@
 
 {% block content %}
 <section class="card form-card">
-    <h2>Request Student Profile Update</h2>
+    <div class="section-head profile-edit-head">
+        <a class="icon-btn" href="{{ url_for('main.dashboard') }}" aria-label="Back to dashboard" title="Back to dashboard">&larr;</a>
+        <h2>Request Student Profile Update</h2>
+    </div>
     <p class="muted">Student profile changes are not applied directly. This request will be sent for faculty approval.</p>
     {% if student['profile_picture'] %}
         <img class="profile-photo" src="{{ url_for('main.profile_picture', filename=student['profile_picture']) }}" alt="Student profile picture">

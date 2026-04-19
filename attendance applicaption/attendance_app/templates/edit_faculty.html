@@ -2,7 +2,10 @@
 
 {% block content %}
 <section class="card form-card">
-    <h2>Edit Faculty</h2>
+    <div class="section-head">
+        <h2>Edit Faculty</h2>
+        <a class="btn secondary" href="{{ url_for('main.dashboard') }}">Back</a>
+    </div>
     <p class="muted">Admins can update faculty details, and faculty members can update their own profile.</p>
     {% if faculty['profile_picture'] %}
         <img class="profile-photo" src="{{ url_for('main.profile_picture', filename=faculty['profile_picture']) }}" alt="Faculty profile picture">

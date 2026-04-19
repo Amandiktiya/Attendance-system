@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
+<div class="dashboard-page">
 <section class="hero compact">
     <div class="card">
         <h2>{{ current_user['role']|title }} Dashboard</h2>
@@ -13,6 +14,9 @@
             <a class="btn primary" href="{{ url_for('main.attendance') }}">Mark Attendance</a>
             <a class="btn secondary" href="{{ url_for('main.approvals') }}">Approvals{% if pending_count %} ({{ pending_count }}){% endif %}</a>
             <a class="btn secondary" href="{{ url_for('main.add_student') }}">Add Student</a>
+            {% if current_user['role'] == 'faculty' %}
+                <a class="btn secondary" href="{{ url_for('main.edit_faculty', user_id=current_user['id']) }}">Edit My Profile</a>
+            {% endif %}
             {% if current_user['role'] == 'admin' %}
                 <a class="btn secondary" href="{{ url_for('main.add_faculty') }}">Add Faculty</a>
             {% endif %}
@@ -249,4 +253,5 @@
     </div>
 </section>
 {% endif %}
+</div>
 {% endblock %}

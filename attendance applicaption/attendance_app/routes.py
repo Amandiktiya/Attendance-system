@@ -1,7 +1,7 @@
 import json
 import uuid
 from collections import OrderedDict
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from flask import (
@@ -334,6 +334,56 @@ def validate_application_file(file_storage):
     stored_name = f"{uuid.uuid4().hex}{extension}"
     file_storage.save(application_upload_dir() / stored_name)
     return (stored_name, original_name, extension.lstrip(".")), None
+
+
+def parse_iso_date(value):
+    try:
+        return datetime.strptime(value, "%Y-%m-%d").date()
+    except (TypeError, ValueError):
+        return None
+
+
+def application_dates_between(start_date, end_date):
+    days = []
+    cursor = start_date
+    while cursor <= end_date:
+        days.append(cursor.isoformat())
+        cursor += timedelta(days=1)
+    return days
+
+
+def user_can_access_application(user, application):
+    if user["role"] == "admin":
+        return True
+    if user["role"] == "student":
+        return application["student_id"] == user["id"]
+    if user["role"] == "faculty":
+        return (
+            application["institution_type"] == user["institution_type"]
+            and application["institution_name"] == user["institution_name"]
+            and application["branch"] == user["branch"]
+        )
+    return False
+
+
+def fetch_application(application_id):
+    return get_db().execute(
+        """
+        SELECT
+            student_applications.*,
+            users.full_name,
+            users.roll_number,
+            users.branch,
+            users.semester,
+            users.year,
+            users.institution_type,
+            users.institution_name
+        FROM student_applications
+        JOIN users ON users.id = student_applications.student_id
+        WHERE student_applications.id = ?
+        """,
+        (application_id,),
+    ).fetchone()
 
 
 def save_profile_picture(file_storage, required=False):
@@ -1040,10 +1090,17 @@ def delete_student(user_id):
 def submit_application():
     user = current_user()
     if request.method == "POST":
-        application_date = request.form.get("application_date", "").strip()
+        date_mode = request.form.get("date_mode", "single").strip()
+        start_date_value = request.form.get("start_date", "").strip()
+        end_date_value = request.form.get("end_date", "").strip()
         reason = request.form.get("reason", "").strip()
-        if not application_date or not reason:
+        start_date = parse_iso_date(start_date_value)
+        end_date = start_date if date_mode != "multiple" else parse_iso_date(end_date_value)
+        if not start_date or not end_date or not reason:
             flash("Application date and reason are required.", "error")
+            return render_template("submit_application.html")
+        if end_date < start_date:
+            flash("End date cannot be earlier than start date.", "error")
             return render_template("submit_application.html")
 
         uploaded_file = request.files.get("application_file")
@@ -1060,10 +1117,10 @@ def submit_application():
         db.execute(
             """
             INSERT INTO student_applications (
-                student_id, application_date, reason, file_name, original_file_name, file_type
-            ) VALUES (?, ?, ?, ?, ?, ?)
+                student_id, application_date, start_date, end_date, reason, file_name, original_file_name, file_type
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (user["id"], application_date, reason, stored_name, original_name, file_type),
+            (user["id"], start_date.isoformat(), start_date.isoformat(), end_date.isoformat(), reason, stored_name, original_name, file_type),
         )
         db.commit()
         flash("Application submitted successfully.", "success")
@@ -1097,7 +1154,7 @@ def applications():
     elif user["role"] == "faculty":
         query += " AND " + faculty_data_clause("users")
         params.extend([user["institution_type"], user["institution_name"], user["branch"]])
-    query += " ORDER BY student_applications.application_date DESC, student_applications.created_at DESC"
+    query += " ORDER BY COALESCE(student_applications.start_date, student_applications.application_date) DESC, student_applications.created_at DESC"
     rows = db.execute(query, tuple(params)).fetchall()
     return render_template("applications.html", applications=rows)
 
@@ -1106,37 +1163,105 @@ def applications():
 @login_required("admin", "faculty", "student")
 def download_application(application_id):
     user = current_user()
-    db = get_db()
-    application = db.execute(
-        """
-        SELECT student_applications.*, users.branch
-        FROM student_applications
-        JOIN users ON users.id = student_applications.student_id
-        WHERE student_applications.id = ?
-        """,
-        (application_id,),
-    ).fetchone()
+    application = fetch_application(application_id)
     if not application or not application["file_name"]:
         flash("Application file not found.", "error")
         return redirect(url_for("main.applications"))
-    if user["role"] == "student" and application["student_id"] != user["id"]:
+    if not user_can_access_application(user, application):
         flash("You cannot access this file.", "error")
         return redirect(url_for("main.applications"))
-    if user["role"] == "faculty":
-        student = db.execute("SELECT * FROM users WHERE id = ?", (application["student_id"],)).fetchone()
-        if not student or (
-            student["institution_type"] != user["institution_type"]
-            or student["institution_name"] != user["institution_name"]
-            or student["branch"] != user["branch"]
-        ):
-            flash("You cannot access this file.", "error")
-            return redirect(url_for("main.applications"))
     return send_from_directory(
         application_upload_dir(),
         application["file_name"],
         as_attachment=True,
         download_name=application["original_file_name"] or application["file_name"],
     )
+
+
+@bp.route("/applications/<int:application_id>/view")
+@login_required("admin", "faculty", "student")
+def view_application_file(application_id):
+    user = current_user()
+    application = fetch_application(application_id)
+    if not application or not application["file_name"]:
+        flash("Application file not found.", "error")
+        return redirect(url_for("main.applications"))
+    if not user_can_access_application(user, application):
+        flash("You cannot access this file.", "error")
+        return redirect(url_for("main.applications"))
+    return send_from_directory(
+        application_upload_dir(),
+        application["file_name"],
+        as_attachment=False,
+        download_name=application["original_file_name"] or application["file_name"],
+    )
+
+
+@bp.route("/applications/<int:application_id>/<action>", methods=["POST"])
+@login_required("admin", "faculty")
+def process_application(application_id, action):
+    user = current_user()
+    db = get_db()
+    application = fetch_application(application_id)
+    if not application or application["status"] != "submitted":
+        flash("Application request not found.", "error")
+        return redirect(url_for("main.applications"))
+    if not user_can_access_application(user, application):
+        flash("You cannot process this application.", "error")
+        return redirect(url_for("main.applications"))
+    if action in {"approve", "reject"}:
+        start_date = parse_iso_date(application["start_date"] or application["application_date"])
+        end_date = parse_iso_date(application["end_date"] or application["application_date"])
+        if not start_date or not end_date:
+            flash("Application date range is invalid.", "error")
+            return redirect(url_for("main.applications"))
+    if action == "approve":
+        remark = f"Approved leave application: {application['reason']}"
+        for attendance_date in application_dates_between(start_date, end_date):
+            db.execute(
+                """
+                INSERT INTO attendance (student_id, attendance_date, status, marked_by, remarks)
+                VALUES (?, ?, 'Leave', ?, ?)
+                ON CONFLICT(student_id, attendance_date)
+                DO UPDATE SET status = excluded.status, marked_by = excluded.marked_by, remarks = excluded.remarks
+                """,
+                (application["student_id"], attendance_date, user["id"], remark),
+            )
+        db.execute(
+            """
+            UPDATE student_applications
+            SET status = 'approved', resolved_by = ?, resolved_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+            """,
+            (user["id"], application_id),
+        )
+        db.commit()
+        flash("Application approved and leave added to attendance feed.", "success")
+    elif action == "reject":
+        remark = f"Rejected application: {application['reason']}"
+        for attendance_date in application_dates_between(start_date, end_date):
+            db.execute(
+                """
+                INSERT INTO attendance (student_id, attendance_date, status, marked_by, remarks)
+                VALUES (?, ?, 'Absent', ?, ?)
+                ON CONFLICT(student_id, attendance_date)
+                DO UPDATE SET status = excluded.status, marked_by = excluded.marked_by, remarks = excluded.remarks
+                """,
+                (application["student_id"], attendance_date, user["id"], remark),
+            )
+        db.execute(
+            """
+            UPDATE student_applications
+            SET status = 'rejected', resolved_by = ?, resolved_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+            """,
+            (user["id"], application_id),
+        )
+        db.commit()
+        flash("Application rejected and absent added to attendance feed.", "success")
+    else:
+        flash("Invalid action.", "error")
+    return redirect(url_for("main.applications"))
 
 
 @bp.route("/faculty/<int:user_id>/edit", methods=["GET", "POST"])

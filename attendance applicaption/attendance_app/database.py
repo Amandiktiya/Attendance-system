@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS attendance (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     student_id INTEGER NOT NULL,
     attendance_date TEXT NOT NULL,
-    status TEXT NOT NULL CHECK (status IN ('Present', 'Absent', 'Late')),
+    status TEXT NOT NULL CHECK (status IN ('Present', 'Absent', 'Late', 'Leave')),
     marked_by INTEGER NOT NULL,
     remarks TEXT,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -72,13 +72,18 @@ CREATE TABLE IF NOT EXISTS student_applications (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     student_id INTEGER NOT NULL,
     application_date TEXT NOT NULL,
+    start_date TEXT,
+    end_date TEXT,
     reason TEXT NOT NULL,
     file_name TEXT,
     original_file_name TEXT,
     file_type TEXT,
-    status TEXT NOT NULL DEFAULT 'submitted' CHECK (status IN ('submitted', 'reviewed')),
+    status TEXT NOT NULL DEFAULT 'submitted' CHECK (status IN ('submitted', 'approved', 'rejected')),
+    resolved_by INTEGER,
+    resolved_at TEXT,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(student_id) REFERENCES users(id)
+    FOREIGN KEY(student_id) REFERENCES users(id),
+    FOREIGN KEY(resolved_by) REFERENCES users(id)
 );
 """
 
@@ -117,6 +122,119 @@ def migrate_db(db):
         db.execute("ALTER TABLE users ADD COLUMN class_roll_number TEXT")
     if "profile_picture" not in user_columns:
         db.execute("ALTER TABLE users ADD COLUMN profile_picture TEXT")
+
+    attendance_schema = db.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'attendance'"
+    ).fetchone()
+    attendance_sql = attendance_schema["sql"] if attendance_schema else ""
+    if "Leave" not in attendance_sql:
+        db.execute("ALTER TABLE attendance RENAME TO attendance_old")
+        db.execute(
+            """
+            CREATE TABLE attendance (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                student_id INTEGER NOT NULL,
+                attendance_date TEXT NOT NULL,
+                status TEXT NOT NULL CHECK (status IN ('Present', 'Absent', 'Late', 'Leave')),
+                marked_by INTEGER NOT NULL,
+                remarks TEXT,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(student_id, attendance_date),
+                FOREIGN KEY(student_id) REFERENCES users(id),
+                FOREIGN KEY(marked_by) REFERENCES users(id)
+            )
+            """
+        )
+        db.execute(
+            """
+            INSERT INTO attendance (id, student_id, attendance_date, status, marked_by, remarks, created_at)
+            SELECT id, student_id, attendance_date, status, marked_by, remarks, created_at
+            FROM attendance_old
+            """
+        )
+        db.execute("DROP TABLE attendance_old")
+    db.execute(
+        """
+        UPDATE attendance
+        SET status = 'Leave',
+            remarks = REPLACE(remarks, 'Approved application:', 'Approved leave application:')
+        WHERE remarks LIKE 'Approved application:%'
+        """
+    )
+
+    application_columns = {
+        row["name"] for row in db.execute("PRAGMA table_info(student_applications)").fetchall()
+    }
+    application_schema = db.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'student_applications'"
+    ).fetchone()
+    schema_sql = application_schema["sql"] if application_schema else ""
+    needs_application_rebuild = (
+        "reviewed" in schema_sql
+        or "approved" not in schema_sql
+        or "start_date" not in application_columns
+        or "end_date" not in application_columns
+        or "resolved_by" not in application_columns
+        or "resolved_at" not in application_columns
+    )
+    if needs_application_rebuild:
+        db.execute("ALTER TABLE student_applications RENAME TO student_applications_old")
+        db.execute(
+            """
+            CREATE TABLE student_applications (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                student_id INTEGER NOT NULL,
+                application_date TEXT NOT NULL,
+                start_date TEXT,
+                end_date TEXT,
+                reason TEXT NOT NULL,
+                file_name TEXT,
+                original_file_name TEXT,
+                file_type TEXT,
+                status TEXT NOT NULL DEFAULT 'submitted' CHECK (status IN ('submitted', 'approved', 'rejected')),
+                resolved_by INTEGER,
+                resolved_at TEXT,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(student_id) REFERENCES users(id),
+                FOREIGN KEY(resolved_by) REFERENCES users(id)
+            )
+            """
+        )
+        old_columns = {
+            row["name"] for row in db.execute("PRAGMA table_info(student_applications_old)").fetchall()
+        }
+        start_expr = "start_date" if "start_date" in old_columns else "application_date"
+        end_expr = "end_date" if "end_date" in old_columns else "application_date"
+        resolved_by_expr = "resolved_by" if "resolved_by" in old_columns else "NULL"
+        resolved_at_expr = "resolved_at" if "resolved_at" in old_columns else "NULL"
+        db.execute(
+            f"""
+            INSERT INTO student_applications (
+                id, student_id, application_date, start_date, end_date, reason,
+                file_name, original_file_name, file_type, status, resolved_by, resolved_at, created_at
+            )
+            SELECT
+                id,
+                student_id,
+                application_date,
+                COALESCE(NULLIF({start_expr}, ''), application_date),
+                COALESCE(NULLIF({end_expr}, ''), application_date),
+                reason,
+                file_name,
+                original_file_name,
+                file_type,
+                CASE
+                    WHEN status = 'reviewed' THEN 'approved'
+                    WHEN status IN ('submitted', 'approved', 'rejected') THEN status
+                    ELSE 'submitted'
+                END,
+                {resolved_by_expr},
+                {resolved_at_expr},
+                created_at
+            FROM student_applications_old
+            """
+        )
+        db.execute("DROP TABLE student_applications_old")
 
 
 def ensure_default_admin(db):
