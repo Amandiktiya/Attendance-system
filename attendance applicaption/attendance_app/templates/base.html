@@ -11,7 +11,7 @@
     <meta property="og:type" content="website">
     <meta property="og:title" content="{% block og_title %}Attendance Hub | Smart Attendance Management System{% endblock %}">
     <meta property="og:description" content="{% block og_description %}Track attendance, manage student records, review approvals, and export reports from one organized dashboard.{% endblock %}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=responsive-2">
     {% block head_extra %}{% endblock %}
 </head>
 <body>
@@ -21,7 +21,13 @@
             <h1><a href="{{ url_for('main.home') }}">Attendance Hub</a></h1>
             <p class="brand-copy">A cleaner way to manage student attendance, approvals, and academic records.</p>
         </div>
-        <nav aria-label="Primary navigation">
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span class="sr-only">Menu</span>
+        </button>
+        <nav id="primary-nav" aria-label="Primary navigation">
             <a href="{{ url_for('main.home') }}">Home</a>
             {% if current_user %}
                 <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
@@ -58,5 +64,32 @@
 
         {% block content %}{% endblock %}
     </main>
+    <script>
+        (function () {
+            const navToggle = document.querySelector(".nav-toggle");
+            const nav = document.getElementById("primary-nav");
+
+            if (navToggle && nav) {
+                navToggle.addEventListener("click", function () {
+                    const isOpen = document.body.classList.toggle("nav-open");
+                    navToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+                });
+            }
+
+            document.querySelectorAll(".table-wrap table:not(.mini-table)").forEach(function (table) {
+                const headings = Array.from(table.querySelectorAll("thead th")).map(function (heading) {
+                    return heading.textContent.trim();
+                });
+
+                table.querySelectorAll("tbody tr").forEach(function (row) {
+                    row.querySelectorAll("td").forEach(function (cell, index) {
+                        if (headings[index]) {
+                            cell.setAttribute("data-label", headings[index]);
+                        }
+                    });
+                });
+            });
+        })();
+    </script>
 </body>
 </html>

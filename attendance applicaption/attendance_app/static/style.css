@@ -37,6 +37,7 @@ body {
     min-height: 100vh;
     overflow-x: hidden;
     font-family: "Plus Jakarta Sans", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.5;
     color: var(--text);
     background:
         radial-gradient(circle at top left, rgba(15, 118, 110, 0.14), transparent 28%),
@@ -51,6 +52,13 @@ a {
 
 img {
     max-width: 100%;
+}
+
+h1,
+h2,
+h3,
+p {
+    overflow-wrap: anywhere;
 }
 
 .sr-only {
@@ -96,6 +104,30 @@ img {
     flex-wrap: wrap;
     gap: 0.75rem;
     align-items: center;
+}
+
+.nav-toggle {
+    display: none;
+    width: 46px;
+    height: 46px;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 5px;
+    padding: 0;
+    border: 1px solid rgba(15, 118, 110, 0.18);
+    border-radius: 14px;
+    color: var(--primary-dark);
+    background: #fff;
+    box-shadow: 0 10px 24px rgba(23, 49, 58, 0.08);
+}
+
+.nav-toggle span:not(.sr-only) {
+    display: block;
+    width: 20px;
+    height: 2px;
+    border-radius: 999px;
+    background: currentColor;
 }
 
 .site-header nav a {
@@ -906,8 +938,10 @@ textarea {
 }
 
 .table-wrap {
+    position: relative;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    border-radius: 16px;
 }
 
 table {
@@ -1153,10 +1187,6 @@ tbody tr:hover {
         bottom: -24%;
     }
 
-    .input-box input,
-    .input-box select {
-        padding-right: 5.5rem;
-    }
 }
 
 @media (max-width: 900px) {
@@ -1285,6 +1315,7 @@ tbody tr:hover {
     .site-header {
         gap: 1rem;
         padding: 1rem 4vw;
+        position: static;
     }
 
     .brand-block {
@@ -1296,21 +1327,23 @@ tbody tr:hover {
     }
 
     .site-header nav {
-        flex-wrap: nowrap;
-        overflow-x: auto;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.55rem;
+        overflow: visible;
         padding-bottom: 0.2rem;
-        scrollbar-width: none;
-    }
-
-    .site-header nav::-webkit-scrollbar {
-        display: none;
     }
 
     .site-header nav a {
-        flex: 0 0 auto;
-        padding: 0.62rem 0.9rem;
+        display: flex;
+        min-height: 44px;
+        align-items: center;
+        justify-content: center;
+        padding: 0.62rem 0.7rem;
         font-size: 0.88rem;
+        text-align: center;
         white-space: nowrap;
+        background: rgba(15, 118, 110, 0.07);
     }
 
     .page-shell {
@@ -1321,6 +1354,15 @@ tbody tr:hover {
     .card {
         padding: 1rem;
         border-radius: 18px;
+        box-shadow: 0 10px 26px rgba(23, 49, 58, 0.08);
+    }
+
+    .card:hover,
+    .home-feature-grid div:hover,
+    .home-info-strip div:hover,
+    .home-hero-metrics div:hover,
+    tbody tr:hover {
+        transform: none;
     }
 
     .section-head,
@@ -1358,7 +1400,7 @@ tbody tr:hover {
     .toggle-panel,
     .auth-form-panel,
     .signup-form-panel {
-        padding: 1.15rem;
+        padding: 1rem;
     }
 
     .home-content-panel h2,
@@ -1389,9 +1431,23 @@ tbody tr:hover {
         min-height: 48px;
     }
 
+    .input-box {
+        margin: 12px 0;
+    }
+
+    .input-box input,
+    .input-box select {
+        padding: 1rem;
+    }
+
     .input-box span {
-        right: 0.75rem;
-        font-size: 0.68rem;
+        position: static;
+        display: inline-flex;
+        width: max-content;
+        max-width: 100%;
+        margin-top: 0.45rem;
+        transform: none;
+        font-size: 0.72rem;
     }
 
     .login-helper,
@@ -1404,6 +1460,20 @@ tbody tr:hover {
 
     table {
         min-width: 560px;
+    }
+
+    .table-wrap {
+        margin-top: 0.75rem;
+        padding-bottom: 0.2rem;
+    }
+
+    .table-wrap::before {
+        content: "Swipe left/right to view full table";
+        display: block;
+        margin-bottom: 0.55rem;
+        color: var(--muted);
+        font-size: 0.82rem;
+        font-weight: 700;
     }
 
     th,
@@ -1419,7 +1489,11 @@ tbody tr:hover {
     }
 
     .brand-block h1 {
-        font-size: 1.9rem;
+        font-size: 1.55rem;
+    }
+
+    .eyebrow {
+        letter-spacing: 0.08em;
     }
 
     .brand-copy {
@@ -1432,6 +1506,15 @@ tbody tr:hover {
 
     .card {
         padding: 0.9rem;
+    }
+
+    .site-header nav {
+        grid-template-columns: 1fr;
+    }
+
+    .site-header nav a {
+        justify-content: flex-start;
+        padding-inline: 0.9rem;
     }
 
     .animated-login-page,
@@ -1458,16 +1541,300 @@ tbody tr:hover {
         gap: 0.9rem;
     }
 
-    .input-box input,
-    .input-box select {
-        padding-right: 4.9rem;
-    }
-
     .input-box span {
         padding: 0.22rem 0.46rem;
     }
 
     table {
         min-width: 500px;
+    }
+}
+
+@media (max-width: 860px) {
+    html {
+        scroll-padding-top: 0;
+    }
+
+    body {
+        background: linear-gradient(180deg, #f8fcfb 0%, #eef5f3 100%);
+    }
+
+    .site-header {
+        position: sticky;
+        top: 0;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        padding: 0.75rem 4vw;
+    }
+
+    .brand-block {
+        min-width: 0;
+    }
+
+    .brand-block .eyebrow,
+    .brand-copy {
+        display: none;
+    }
+
+    .brand-block h1 {
+        font-size: 1.35rem;
+        line-height: 1.15;
+    }
+
+    .nav-toggle {
+        display: inline-flex;
+    }
+
+    .site-header nav {
+        grid-column: 1 / -1;
+        display: none;
+        width: 100%;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.55rem;
+        padding-top: 0.75rem;
+    }
+
+    body.nav-open .site-header nav {
+        display: grid;
+    }
+
+    .site-header nav a {
+        min-height: 46px;
+        justify-content: center;
+        padding: 0.7rem 0.65rem;
+        border-radius: 12px;
+        color: var(--primary-dark);
+        background: rgba(15, 118, 110, 0.08);
+        text-align: center;
+        white-space: normal;
+    }
+
+    .page-shell {
+        width: min(100% - 1rem, 760px);
+        margin: 0.75rem auto 1.5rem;
+    }
+
+    .animated-home-page,
+    .animated-login-page,
+    .auth-shell {
+        padding: 0;
+    }
+
+    .animated-auth-container,
+    .home-auth-card,
+    .auth-card,
+    .auth-card-wide,
+    .card {
+        border-radius: 16px;
+    }
+
+    .home-auth-card,
+    .auth-card,
+    .auth-card-wide {
+        box-shadow: 0 10px 26px rgba(23, 49, 58, 0.08);
+    }
+
+    .home-graphic-panel,
+    .home-content-panel,
+    .animated-form-box,
+    .toggle-panel,
+    .auth-toggle-panel,
+    .auth-form-panel,
+    .signup-form-panel {
+        padding: 1rem;
+    }
+
+    .home-graphic-panel,
+    .auth-toggle-panel {
+        min-height: auto;
+    }
+
+    .home-auth-card::before,
+    .auth-card::before {
+        display: none;
+    }
+
+    .home-graphic-panel,
+    .auth-toggle-panel,
+    .toggle-panel {
+        background: linear-gradient(135deg, #0f766e 0%, #134e4a 100%);
+    }
+
+    .home-content-panel h2,
+    .animated-auth-container h1,
+    .home-graphic-panel h1,
+    .auth-toggle-panel h1,
+    .auth-form h2 {
+        font-size: clamp(1.55rem, 7vw, 2.15rem);
+        line-height: 1.15;
+    }
+
+    .grid-form,
+    .profile-grid,
+    .home-feature-grid,
+    .home-info-strip,
+    .home-hero-metrics {
+        grid-template-columns: 1fr;
+    }
+
+    .section-head,
+    .actions,
+    .inline-form {
+        align-items: stretch;
+    }
+
+    .section-head > *,
+    .actions > *,
+    .actions form,
+    .inline-form > *,
+    .inline-form label {
+        width: 100%;
+    }
+
+    .btn,
+    .animated-btn,
+    button,
+    input,
+    select,
+    textarea {
+        min-height: 48px;
+    }
+
+    .btn,
+    .animated-btn {
+        width: 100%;
+        border-radius: 12px;
+        padding: 0.85rem 1rem;
+        text-align: center;
+    }
+
+    input,
+    select,
+    textarea {
+        border-radius: 12px;
+        font-size: 16px;
+    }
+
+    .input-box input,
+    .input-box select {
+        padding: 1rem;
+    }
+
+    .input-box span {
+        position: static;
+        display: inline-flex;
+        width: max-content;
+        max-width: 100%;
+        margin-top: 0.45rem;
+        transform: none;
+    }
+
+    .table-wrap {
+        overflow: visible;
+    }
+
+    .table-wrap::before {
+        display: none;
+    }
+
+    .table-wrap table:not(.mini-table) {
+        min-width: 0;
+        border-collapse: separate;
+        border-spacing: 0;
+        background: transparent;
+    }
+
+    .table-wrap table:not(.mini-table) thead {
+        display: none;
+    }
+
+    .table-wrap table:not(.mini-table),
+    .table-wrap table:not(.mini-table) tbody,
+    .table-wrap table:not(.mini-table) tr,
+    .table-wrap table:not(.mini-table) td {
+        display: block;
+        width: 100%;
+    }
+
+    .table-wrap table:not(.mini-table) tr {
+        margin-bottom: 0.9rem;
+        padding: 0.85rem;
+        border: 1px solid rgba(15, 118, 110, 0.12);
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.92);
+        box-shadow: 0 10px 22px rgba(23, 49, 58, 0.07);
+    }
+
+    .table-wrap table:not(.mini-table) td {
+        display: grid;
+        grid-template-columns: minmax(105px, 38%) minmax(0, 1fr);
+        gap: 0.8rem;
+        padding: 0.58rem 0;
+        border: 0;
+        font-size: 0.92rem;
+        text-align: right;
+        word-break: break-word;
+    }
+
+    .table-wrap table:not(.mini-table) td + td {
+        border-top: 1px solid rgba(15, 118, 110, 0.08);
+    }
+
+    .table-wrap table:not(.mini-table) td::before {
+        content: attr(data-label);
+        color: var(--muted);
+        font-weight: 800;
+        text-align: left;
+    }
+
+    .table-wrap table:not(.mini-table) td[colspan] {
+        display: block;
+        text-align: center;
+    }
+
+    .table-wrap table:not(.mini-table) td[colspan]::before {
+        content: "";
+        display: none;
+    }
+
+    .mini-table {
+        min-width: 420px;
+    }
+
+    .profile-photo {
+        width: 96px;
+        height: 96px;
+        border-radius: 18px;
+    }
+}
+
+@media (max-width: 480px) {
+    .site-header nav {
+        grid-template-columns: 1fr;
+    }
+
+    .page-shell {
+        width: min(100% - 0.7rem, 100%);
+    }
+
+    .card {
+        padding: 0.85rem;
+    }
+
+    .home-content-panel,
+    .home-graphic-panel,
+    .animated-form-box,
+    .toggle-panel,
+    .auth-toggle-panel,
+    .auth-form-panel,
+    .signup-form-panel {
+        padding: 0.9rem;
+    }
+
+    .table-wrap table:not(.mini-table) td {
+        grid-template-columns: 1fr;
+        gap: 0.25rem;
+        text-align: left;
     }
 }
