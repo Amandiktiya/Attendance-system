@@ -677,13 +677,15 @@ def login():
         institution_name = request.form.get("institution_name", "").strip()
         branch = request.form.get("branch", "").strip()
 
-        if role in {"admin", "faculty"} and not institution_type:
+        if role == "faculty" and not institution_type:
             flash("Please choose how you want to use this app.", "error")
             return render_template("login.html", faculty_institutions=available_institutions("faculty"), student_institutions=available_institutions("student"))
 
         if role == "student":
             query, params = student_identifier_query(identifier)
             user = db.execute(query, params).fetchone()
+        elif role == "admin":
+            user = db.execute("SELECT * FROM users WHERE role = 'admin' AND email = ?", (identifier,)).fetchone()
         else:
             if role != "admin" and institution_name_required(role, institution_type) and not institution_name:
                 flash("Please select a college or school.", "error")
@@ -1082,6 +1084,25 @@ def delete_student(user_id):
     db.execute("DELETE FROM users WHERE id = ?", (user_id,))
     db.commit()
     flash("Student deleted successfully.", "success")
+    return redirect(url_for("main.dashboard"))
+
+
+@bp.route("/faculty/<int:user_id>/delete", methods=["POST"])
+@login_required("admin")
+def delete_faculty(user_id):
+    db = get_db()
+    faculty = db.execute("SELECT * FROM users WHERE id = ? AND role = 'faculty'", (user_id,)).fetchone()
+    if not faculty:
+        flash("Faculty not found.", "error")
+        return redirect(url_for("main.dashboard"))
+
+    admin = current_user()
+    db.execute("UPDATE attendance SET marked_by = ? WHERE marked_by = ?", (admin["id"], user_id))
+    db.execute("UPDATE student_applications SET resolved_by = ? WHERE resolved_by = ?", (admin["id"], user_id))
+    db.execute("DELETE FROM pending_changes WHERE target_user_id = ? OR requested_by = ?", (user_id, user_id))
+    db.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    db.commit()
+    flash("Faculty deleted successfully.", "success")
     return redirect(url_for("main.dashboard"))
 
 

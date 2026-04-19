@@ -119,11 +119,16 @@
             }
 
             async function loadPage(url, options) {
-                setLoading(true);
+                const requestOptions = Object.assign({}, options || {});
+                const preserveScroll = Boolean(requestOptions.preserveScroll);
+                const updateHeader = requestOptions.updateHeader !== false;
+                delete requestOptions.preserveScroll;
+                delete requestOptions.updateHeader;
+                setLoading(!preserveScroll);
                 try {
                     const response = await fetch(url, Object.assign({
                         headers: { "X-Requested-With": "fetch" }
-                    }, options || {}));
+                    }, requestOptions));
                     const contentType = response.headers.get("content-type") || "";
                     if (!contentType.includes("text/html")) {
                         window.location.href = url;
@@ -147,12 +152,16 @@
                     if (response.url && response.url !== window.location.href) {
                         history.replaceState({}, "", response.url);
                     }
-                    header.innerHTML = nextHeader.innerHTML;
+                    if (updateHeader) {
+                        header.innerHTML = nextHeader.innerHTML;
+                    }
                     main.innerHTML = nextMain.innerHTML;
                     document.body.classList.remove("nav-open");
                     runInlineScripts(main);
                     bootPage();
-                    window.scrollTo({ top: 0, behavior: "smooth" });
+                    if (!preserveScroll) {
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                    }
                 } catch (error) {
                     window.location.href = url;
                 } finally {
@@ -196,7 +205,7 @@
                     }
                     action.search = params.toString();
                     history.pushState({}, "", action.href);
-                    loadPage(action.href);
+                    loadPage(action.href, { preserveScroll: true, updateHeader: false });
                     return;
                 }
 

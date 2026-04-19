@@ -180,12 +180,11 @@
                             <td>{{ faculty['branch'] }}</td>
                             <td>{{ faculty['email'] }}</td>
                             <td>{{ faculty['mobile_number'] }}</td>
-                            <td>
-                                {% if current_user['role'] == 'admin' or current_user['id'] == faculty['id'] %}
-                                    <a class="btn secondary" href="{{ url_for('main.edit_faculty', user_id=faculty['id']) }}">Edit</a>
-                                {% else %}
-                                    -
-                                {% endif %}
+                            <td class="actions">
+                                <a class="btn secondary" href="{{ url_for('main.edit_faculty', user_id=faculty['id']) }}">Edit</a>
+                                <form method="post" action="{{ url_for('main.delete_faculty', user_id=faculty['id']) }}">
+                                    <button class="btn secondary" type="submit">Delete</button>
+                                </form>
                             </td>
                         </tr>
                     {% else %}
