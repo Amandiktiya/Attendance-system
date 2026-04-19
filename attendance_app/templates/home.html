@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance Hub | Student, Faculty and Admin Attendance Platform{% endblock %}
+{% block meta_description %}Attendance Hub is a streamlined attendance platform for students, faculty, schools, and colleges with role-based login, approvals, daily attendance tracking, and report exports.{% endblock %}
+{% block og_title %}Attendance Hub | Attendance Platform for Schools and Colleges{% endblock %}
+{% block og_description %}Manage attendance, registrations, profile approvals, and reports with one simple academic platform.{% endblock %}
+
+{% block content %}
+<section class="animated-home-page">
+    <div class="home-auth-card">
+        <div class="home-graphic-panel">
+            <div class="home-hero-copy">
+                <p class="eyebrow light">Built for schools, colleges, and training programs</p>
+                <h1>Attendance that stays organized from login to report export.</h1>
+                <p>
+                    Daily attendance marking, branch-wise student records, approval workflows,
+                    and downloadable reports in one reliable platform.
+                </p>
+                <div class="home-hero-metrics">
+                    <div>
+                        <strong>3 Roles</strong>
+                        <span>Admin, Faculty, Student</span>
+                    </div>
+                    <div>
+                        <strong>Fast Reports</strong>
+                        <span>Daily records with export support</span>
+                    </div>
+                </div>
+                <a class="animated-btn home-outline-btn" href="{{ url_for('main.login') }}">Open Login</a>
+            </div>
+        </div>
+        <div class="home-content-panel">
+            <p class="eyebrow">One platform, role-based access</p>
+            <h2>Smart attendance management system for academic teams</h2>
+            <p class="lead">
+                Attendance Hub helps academic staff and students keep records clean and visible.
+                From registration and secure login to attendance updates and approval tracking,
+                the interface is designed to stay simple and readable.
+            </p>
+            <div class="home-feature-grid">
+            
+            </div>
+            <div class="actions">
+                <a class="animated-btn home-primary-btn" href="{{ url_for('main.login') }}">Login</a>
+                <a class="btn secondary" href="{{ url_for('main.student_register') }}">Create Student Account</a>
+            </div>
+            <div class="home-info-strip">
+                <div>
+                    <strong>Attendance tracking</strong>
+                    <span>Mark daily attendance and keep date-wise records ready for review.</span>
+                </div>
+                <div>
+                    <strong>Approval workflow</strong>
+                    <span>Profile edits and verification requests remain visible to the right people.</span>
+                </div>
+                <div>
+                    <strong>Report support</strong>
+                    <span>Export attendance data for academic monitoring and record keeping.</span>
+                </div>
+            </div>
+            <!-- <p class="admin-hint">Default admin login: <strong>admin@example.com</strong> / <strong>admin123</strong></p> -->
+        </div>
+    </div>
+</section>
+{% endblock %}

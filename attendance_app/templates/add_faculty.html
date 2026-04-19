@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card form-card">
+    <h2>Add Faculty</h2>
+    <p class="muted">Only an admin can create a faculty account.</p>
+    <form method="post" enctype="multipart/form-data" class="grid-form">
+        <label>Full Name<input type="text" name="full_name" required></label>
+        <label>Profile Picture<input type="file" name="profile_picture" accept=".jpg,.jpeg,.png" required></label>
+        <label>Father Name<input type="text" name="father_name"></label>
+        <label>
+            Institution Type
+            <select name="institution_type" id="add-faculty-institution-type" required>
+                <option value="">Select Type</option>
+                {% for value, label in institution_options %}
+                    <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label id="add-faculty-institution-name-group">College / School Name<input type="text" name="institution_name" id="add-faculty-institution-name"></label>
+        <label>Branch / Department<input type="text" name="branch" required></label>
+        <label>Email<input type="email" name="email" required></label>
+        <label>Mobile Number<input type="text" name="mobile_number" maxlength="10" required></label>
+        <label>Password<input type="password" name="password" required></label>
+        <button class="btn primary" type="submit">Create Faculty</button>
+    </form>
+</section>
+
+<script>
+    const addFacultyInstitutionType = document.getElementById("add-faculty-institution-type");
+    const addFacultyInstitutionNameGroup = document.getElementById("add-faculty-institution-name-group");
+    const addFacultyInstitutionName = document.getElementById("add-faculty-institution-name");
+    const schoolCollegeTypesSet = new Set({{ school_college_types|tojson }});
+
+    function syncAddFacultyInstitutionField() {
+        const needsInstitution = schoolCollegeTypesSet.has(addFacultyInstitutionType.value);
+        addFacultyInstitutionNameGroup.style.display = needsInstitution ? "flex" : "none";
+        addFacultyInstitutionName.required = needsInstitution;
+        if (!needsInstitution) {
+            addFacultyInstitutionName.value = "";
+        }
+    }
+
+    addFacultyInstitutionType.addEventListener("change", syncAddFacultyInstitutionField);
+    syncAddFacultyInstitutionField();
+</script>
+{% endblock %}

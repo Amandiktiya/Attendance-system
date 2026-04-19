@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Login | Attendance Hub{% endblock %}
+{% block meta_description %}Login to Attendance Hub as an admin, faculty member, or student to manage attendance, approvals, records, and academic reports.{% endblock %}
+{% block og_title %}Attendance Hub Login{% endblock %}
+{% block og_description %}Secure role-based login for admins, faculty, and students with institution-specific access controls.{% endblock %}
+
+{% block content %}
+<section class="animated-login-page">
+    <div class="animated-auth-container" id="attendance-auth">
+        <div class="animated-form-box login">
+            <form method="post" id="login-form">
+                <p class="eyebrow">Secure sign in</p>
+                <h1>Login to your attendance dashboard</h1>
+                <p class="auth-note">Admin, faculty, and student accounts can sign in from the same page using role-based access.</p>
+
+                <div class="input-box">
+                    <label for="login-role" class="sr-only">Select role</label>
+                    <select name="role" id="login-role" required>
+                        <option value="admin">Admin</option>
+                        <option value="faculty">Faculty</option>
+                        <option value="student">Student</option>
+                    </select>
+                    <span>Role</span>
+                </div>
+
+                <div class="input-box">
+                    <label for="institution-type" class="sr-only">Select institution type</label>
+                    <select name="institution_type" id="institution-type" required>
+                        <option value="">Select institution type</option>
+                        {% for value, label in institution_options %}
+                            <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    <span>Type</span>
+                </div>
+
+                <div class="input-box" id="institution-name-group">
+                    <label for="institution-name" class="sr-only">Institution name</label>
+                    <input type="text" name="institution_name" id="institution-name" list="institution-list" placeholder="College, school, or institution name">
+                    <span>Name</span>
+                    <datalist id="institution-list">
+                        {% for name in faculty_institutions %}
+                            <option value="{{ name }}"></option>
+                        {% endfor %}
+                        {% for name in student_institutions %}
+                            <option value="{{ name }}"></option>
+                        {% endfor %}
+                    </datalist>
+                </div>
+
+                <div class="input-box" id="branch-group">
+                    <label for="login-branch" class="sr-only">Branch or department</label>
+                    <input type="text" name="branch" id="login-branch" placeholder="Faculty branch or department">
+                    <span>Branch</span>
+                </div>
+
+                <div class="input-box">
+                    <label for="identifier" class="sr-only">Email or student identifier</label>
+                    <input type="text" name="identifier" id="identifier" placeholder="Email, roll number, or registration number" required>
+                    <span>User ID</span>
+                </div>
+
+                <div class="input-box">
+                    <label for="password" class="sr-only">Password</label>
+                    <input type="password" name="password" id="password" placeholder="Password" required>
+                    <span>Password</span>
+                </div>
+
+                <button type="submit" class="animated-btn">Login</button>
+                <p class="login-helper">Tip: Students can use email, roll number, registration number, or mobile number where supported.</p>
+            </form>
+        </div>
+
+        <div class="animated-form-box register">
+            <div class="signup-preview">
+                <p class="eyebrow">New student access</p>
+                <h1>Create your student profile</h1>
+                <p>Register with your basic academic details, upload your profile photo, and get ready to track attendance from your dashboard.</p>
+                <ul class="signup-points">
+                    <li>Simple registration with role-based access</li>
+                    <li>Institution, branch, and semester details</li>
+                    <li>Profile update workflow with approvals</li>
+                </ul>
+                <a class="animated-btn" href="{{ url_for('main.student_register') }}">Open Student Sign Up</a>
+            </div>
+        </div>
+
+        <div class="toggle-box">
+            <div class="toggle-panel toggle-left">
+                <p class="eyebrow light">Attendance Hub</p>
+                <h1>Need a student account?</h1>
+                <p>Open the registration view to create a student profile with the correct institution details.</p>
+                <button class="animated-btn register-btn" type="button">View Sign Up</button>
+            </div>
+
+            <div class="toggle-panel toggle-right">
+                <p class="eyebrow light">Welcome back</p>
+                <h1>Already registered?</h1>
+                <p>Return to the login form to access your dashboard and attendance tools.</p>
+                <button class="animated-btn login-btn" type="button">Back to Login</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    const roleSelect = document.getElementById("login-role");
+    const institutionTypeSelect = document.getElementById("institution-type");
+    const institutionNameGroup = document.getElementById("institution-name-group");
+    const institutionNameInput = document.getElementById("institution-name");
+    const branchGroup = document.getElementById("branch-group");
+    const branchInput = document.getElementById("login-branch");
+    const schoolCollegeTypes = new Set({{ school_college_types|tojson }});
+
+    function syncInstitutionField() {
+        const role = roleSelect.value;
+        const institutionType = institutionTypeSelect.value;
+        const needsInstitution = role !== "admin" && institutionType && (role === "student" ? institutionType !== "other_institution" : schoolCollegeTypes.has(institutionType));
+        const needsBranch = role === "faculty";
+        institutionNameGroup.style.display = needsInstitution ? "flex" : "none";
+        institutionNameInput.required = needsInstitution;
+        branchGroup.style.display = needsBranch ? "flex" : "none";
+        branchInput.required = needsBranch;
+        if (!needsInstitution) {
+            institutionNameInput.value = "";
+        }
+        if (!needsBranch) {
+            branchInput.value = "";
+        }
+    }
+
+    roleSelect.addEventListener("change", syncInstitutionField);
+    institutionTypeSelect.addEventListener("change", syncInstitutionField);
+    syncInstitutionField();
+
+    const authContainer = document.getElementById("attendance-auth");
+    document.querySelector(".register-btn").addEventListener("click", () => {
+        authContainer.classList.add("active");
+    });
+    document.querySelector(".login-btn").addEventListener("click", () => {
+        authContainer.classList.remove("active");
+    });
+</script>
+{% endblock %}
