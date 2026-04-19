@@ -704,7 +704,7 @@ def student_register():
                     db.commit()
                     session["pending_student_mobile"] = mobile_number
                     session["pending_student_otp"] = otp_value
-            flash("OTP generated. In demo mode, the OTP is displayed on the screen.", "success")
+                    flash("OTP generated. Please use the OTP displayed on this screen.", "success")
         else:
             form = request.form
             registration_mobile = form.get("mobile_number", "").strip()

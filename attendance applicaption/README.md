@@ -28,4 +28,4 @@ python app.py
 
 - Student login uses `roll number + password`.
 - Admin and faculty login use `email + password`.
-- OTP feature is wired as a demo flow and shows OTP on screen. Real SMS provider integration can be added later.
+- OTP verification runs in demo mode and shows the generated OTP on the registration screen.
