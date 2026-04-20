@@ -737,9 +737,12 @@ def login():
 @bp.route("/profiles/<path:filename>")
 @login_required("admin", "faculty", "student")
 def profile_picture(filename):
+    upload_dir = profile_upload_dir()
+    if (upload_dir / filename).exists():
+        return send_from_directory(upload_dir, filename)
     if supabase_enabled():
         return send_stored_file("profiles", filename)
-    return send_from_directory(profile_upload_dir(), filename)
+    return send_from_directory(upload_dir, filename)
 
 
 @bp.route("/storage/status")
