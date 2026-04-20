@@ -2,6 +2,7 @@ import os
 
 from flask import Flask
 
+from .api import bp as api_bp
 from .database import init_app
 from .routes import bp
 
@@ -9,22 +10,15 @@ from .routes import bp
 def create_app():
     app = Flask(__name__)
     app.config.update(
-        SECRET_KEY="attendance-app-dev-secret",
-        DATABASE="attendance.db",
+        SECRET_KEY=os.environ.get("SECRET_KEY", "attendance-app-dev-secret"),
+        DATABASE=os.environ.get("DATABASE_PATH", "attendance.db"),
         OTP_EXPIRY_MINUTES=5,
         MAX_CONTENT_LENGTH=5 * 1024 * 1024,
         APPLICATION_UPLOAD_FOLDER="uploads/applications",
         PROFILE_UPLOAD_FOLDER="uploads/profiles",
-        SUPABASE_URL=os.environ.get("SUPABASE_URL", ""),
-        SUPABASE_SERVICE_ROLE_KEY=os.environ.get("SUPABASE_SERVICE_ROLE_KEY", ""),
-        SUPABASE_STORAGE_BUCKET=os.environ.get("SUPABASE_STORAGE_BUCKET", ""),
-        SUPABASE_DB_URL=os.environ.get("SUPABASE_DB_URL", ""),
-        DATABASE_URL=os.environ.get("DATABASE_URL", ""),
-        ADMIN_EMAIL=os.environ.get("ADMIN_EMAIL", ""),
-        ADMIN_PASSWORD=os.environ.get("ADMIN_PASSWORD", ""),
-        ADMIN_NAME=os.environ.get("ADMIN_NAME", "System Admin"),
     )
 
     init_app(app)
     app.register_blueprint(bp)
+    app.register_blueprint(api_bp)
     return app

@@ -1,7 +1,7 @@
 import json
 import uuid
 from collections import OrderedDict
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 
 from flask import (
@@ -21,7 +21,6 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from .auth import current_user, login_required
 from .database import get_db
-from .storage import send_stored_file, storage_status, supabase_enabled, upload_file
 from .utils import attendance_workbook, build_otp, is_valid_mobile, one_year_ago_iso, otp_expiry, today_iso
 
 bp = Blueprint("main", __name__)
@@ -149,12 +148,10 @@ def student_identifier_query(identifier):
     )
 
 
-def validate_profile_form(form, role, editing_user_id=None, require_registration_number=True):
+def validate_profile_form(form, role, editing_user_id=None):
     db = get_db()
     errors = []
-    required_fields = ["full_name", "mobile_number", "institution_type"]
-    if role != "student":
-        required_fields.append("email")
+    required_fields = ["full_name", "email", "mobile_number", "institution_type"]
     if role == "student":
         required_fields.extend(
             [
@@ -165,11 +162,10 @@ def validate_profile_form(form, role, editing_user_id=None, require_registration
                 "year",
                 "dob",
                 "roll_number",
+                "registration_number",
                 "gmail",
             ]
         )
-        if require_registration_number:
-            required_fields.append("registration_number")
     else:
         required_fields.append("branch")
 
@@ -199,25 +195,17 @@ def validate_profile_form(form, role, editing_user_id=None, require_registration
 
     email = form.get("email", "").strip()
     if email:
-        email_query = "SELECT id FROM users WHERE email = ? AND id != ?"
-        email_params = [email, editing_user_id or 0]
-        if role in {"faculty", "student"}:
-            email_query += " AND role != 'admin'"
         existing = db.execute(
-            email_query,
-            email_params,
+            "SELECT id FROM users WHERE email = ? AND id != ?",
+            (email, editing_user_id or 0),
         ).fetchone()
         if existing:
             errors.append("This email is already in use.")
 
     if mobile_number:
-        mobile_query = "SELECT id FROM users WHERE mobile_number = ? AND id != ?"
-        mobile_params = [mobile_number, editing_user_id or 0]
-        if role in {"faculty", "student"}:
-            mobile_query += " AND role != 'admin'"
         existing = db.execute(
-            mobile_query,
-            mobile_params,
+            "SELECT id FROM users WHERE mobile_number = ? AND id != ?",
+            (mobile_number, editing_user_id or 0),
         ).fetchone()
         if existing:
             errors.append("This mobile number is already in use.")
@@ -243,6 +231,7 @@ def validate_profile_form(form, role, editing_user_id=None, require_registration
 def profile_payload(form, role):
     payload = {
         "full_name": form.get("full_name", "").strip(),
+        "father_name": form.get("father_name", "").strip(),
         "branch": form.get("branch", "").strip(),
         "semester": form.get("semester", "").strip(),
         "year": form.get("year", "").strip(),
@@ -258,7 +247,6 @@ def profile_payload(form, role):
     if role == "student":
         payload.update(
             {
-                "father_name": form.get("father_name", "").strip(),
                 "class_roll_number": form.get("class_roll_number", "").strip(),
                 "roll_number": form.get("roll_number", "").strip(),
                 "registration_number": form.get("registration_number", "").strip(),
@@ -344,61 +332,8 @@ def validate_application_file(file_storage):
         return None, "Application file size must be less than 5 MB."
 
     stored_name = f"{uuid.uuid4().hex}{extension}"
-    if supabase_enabled():
-        upload_file("applications", stored_name, file_storage)
-    else:
-        file_storage.save(application_upload_dir() / stored_name)
+    file_storage.save(application_upload_dir() / stored_name)
     return (stored_name, original_name, extension.lstrip(".")), None
-
-
-def parse_iso_date(value):
-    try:
-        return datetime.strptime(value, "%Y-%m-%d").date()
-    except (TypeError, ValueError):
-        return None
-
-
-def application_dates_between(start_date, end_date):
-    days = []
-    cursor = start_date
-    while cursor <= end_date:
-        days.append(cursor.isoformat())
-        cursor += timedelta(days=1)
-    return days
-
-
-def user_can_access_application(user, application):
-    if user["role"] == "admin":
-        return True
-    if user["role"] == "student":
-        return application["student_id"] == user["id"]
-    if user["role"] == "faculty":
-        return (
-            application["institution_type"] == user["institution_type"]
-            and application["institution_name"] == user["institution_name"]
-            and application["branch"] == user["branch"]
-        )
-    return False
-
-
-def fetch_application(application_id):
-    return get_db().execute(
-        """
-        SELECT
-            student_applications.*,
-            users.full_name,
-            users.roll_number,
-            users.branch,
-            users.semester,
-            users.year,
-            users.institution_type,
-            users.institution_name
-        FROM student_applications
-        JOIN users ON users.id = student_applications.student_id
-        WHERE student_applications.id = ?
-        """,
-        (application_id,),
-    ).fetchone()
 
 
 def save_profile_picture(file_storage, required=False):
@@ -416,10 +351,7 @@ def save_profile_picture(file_storage, required=False):
     if size > MAX_APPLICATION_SIZE:
         return None, "Profile picture size must be less than 5 MB."
     stored_name = f"{uuid.uuid4().hex}{extension}"
-    if supabase_enabled():
-        upload_file("profiles", stored_name, file_storage)
-    else:
-        file_storage.save(profile_upload_dir() / stored_name)
+    file_storage.save(profile_upload_dir() / stored_name)
     return stored_name, None
 
 
@@ -427,7 +359,7 @@ def update_user_record(user_id, form, role, allow_password_update=True):
     db = get_db()
     params = {
         "full_name": form.get("full_name", "").strip(),
-        "father_name": form.get("father_name", "").strip() if role == "student" else "",
+        "father_name": form.get("father_name", "").strip(),
         "branch": form.get("branch", "").strip(),
         "semester": form.get("semester", "").strip(),
         "year": form.get("year", "").strip(),
@@ -472,6 +404,7 @@ def update_user_record(user_id, form, role, allow_password_update=True):
             """
             UPDATE users
             SET full_name = :full_name,
+                father_name = :father_name,
                 profile_picture = COALESCE(NULLIF(:profile_picture, ''), profile_picture),
                 institution_type = :institution_type,
                 institution_name = :institution_name,
@@ -683,6 +616,17 @@ def home():
     return render_template("home.html")
 
 
+@bp.route("/admin")
+def admin():
+    user = current_user()
+    if user and user["role"] == "admin":
+        return redirect(url_for("main.dashboard"))
+    if user:
+        flash("Please login with an admin account.", "error")
+        return redirect(url_for("main.dashboard"))
+    return redirect(url_for("main.login", role="admin"))
+
+
 @bp.route("/login", methods=["GET", "POST"])
 def login():
     db = get_db()
@@ -703,11 +647,11 @@ def login():
             user = db.execute(query, params).fetchone()
         elif role == "admin":
             user = db.execute(
-                "SELECT * FROM users WHERE role = ? AND LOWER(TRIM(email)) = ?",
-                (role, identifier.lower()),
+                "SELECT * FROM users WHERE role = 'admin' AND LOWER(TRIM(email)) = ?",
+                (identifier.lower(),),
             ).fetchone()
         else:
-            if role != "admin" and institution_name_required(role, institution_type) and not institution_name:
+            if institution_name_required(role, institution_type) and not institution_name:
                 flash("Please select a college or school.", "error")
                 return render_template("login.html", faculty_institutions=available_institutions("faculty", institution_type), student_institutions=available_institutions("student", institution_type))
 
@@ -742,19 +686,7 @@ def login():
 @bp.route("/profiles/<path:filename>")
 @login_required("admin", "faculty", "student")
 def profile_picture(filename):
-    upload_dir = profile_upload_dir()
-    if (upload_dir / filename).exists():
-        return send_from_directory(upload_dir, filename)
-    if supabase_enabled():
-        return send_stored_file("profiles", filename)
-    return send_from_directory(upload_dir, filename)
-
-
-@bp.route("/storage/status")
-@login_required("admin")
-def storage_diagnostics():
-    status = storage_status()
-    return render_template("storage_status.html", status=status)
+    return send_from_directory(profile_upload_dir(), filename)
 
 
 @bp.route("/logout")
@@ -779,7 +711,7 @@ def student_register():
             if not is_valid_mobile(mobile_number):
                 flash("Mobile number must be 10 digits.", "error")
             else:
-                existing = db.execute("SELECT id FROM users WHERE mobile_number = ? AND role != 'admin'", (mobile_number,)).fetchone()
+                existing = db.execute("SELECT id FROM users WHERE mobile_number = ?", (mobile_number,)).fetchone()
                 if existing:
                     flash("This mobile number is already linked to an account.", "error")
                 else:
@@ -788,16 +720,16 @@ def student_register():
                     db.commit()
                     session["pending_student_mobile"] = mobile_number
                     session["pending_student_otp"] = otp_value
-                    flash("OTP generated. Please use the OTP displayed on this screen.", "success")
+            flash("OTP generated. In demo mode, the OTP is displayed on the screen.", "success")
         else:
             form = request.form
             registration_mobile = form.get("mobile_number", "").strip()
-            required_fields = ["full_name", "father_name", "institution_type", "branch", "semester", "year", "dob", "class_roll_number", "roll_number", "gmail", "mobile_number", "password", "otp_code"]
+            required_fields = ["full_name", "father_name", "institution_type", "branch", "semester", "year", "dob", "class_roll_number", "roll_number", "registration_number", "gmail", "email", "mobile_number", "password", "otp_code"]
             if any(not form.get(field, "").strip() for field in required_fields):
                 flash("All fields are required. The account cannot be created with an incomplete form.", "error")
                 return render_template("student_register.html", otp_value=session.get("pending_student_otp"), registration_mobile=registration_mobile)
 
-            validation_errors = validate_profile_form(form, "student", require_registration_number=False)
+            validation_errors = validate_profile_form(form, "student")
             if validation_errors:
                 flash(validation_errors[0], "error")
                 return render_template("student_register.html", otp_value=session.get("pending_student_otp"), registration_mobile=registration_mobile)
@@ -846,7 +778,7 @@ def student_register():
                     form.get("institution_name", "").strip(),
                     form["class_roll_number"].strip(),
                     form["roll_number"].strip(),
-                    form["registration_number"].strip() or None,
+                    form["registration_number"].strip(),
                     form["full_name"].strip(),
                     form["father_name"].strip(),
                     form["branch"].strip(),
@@ -855,7 +787,7 @@ def student_register():
                     form["dob"].strip(),
                     form["mobile_number"].strip(),
                     form["gmail"].strip(),
-                    form["email"].strip() or None,
+                    form["email"].strip(),
                     generate_password_hash(form["password"]),
                     1,
                 ),
@@ -1023,7 +955,7 @@ def add_faculty():
             """,
             (
                 "faculty", profile_picture, form["institution_type"].strip(), form.get("institution_name", "").strip(), form["full_name"].strip(),
-                "", form["branch"].strip(), "", "", "", form["mobile_number"].strip(),
+                form.get("father_name", "").strip(), form["branch"].strip(), "", "", "", form["mobile_number"].strip(),
                 form["email"].strip(), form["email"].strip(), generate_password_hash(form["password"]), 1, user["id"],
             ),
         )
@@ -1046,7 +978,7 @@ def student_profile_edit():
             return render_template("student_profile_edit.html", student=student)
         if profile_picture:
             form_data["profile_picture"] = profile_picture
-        errors = validate_profile_form(form_data, "student", editing_user_id=user["id"], require_registration_number=False)
+        errors = validate_profile_form(form_data, "student", editing_user_id=user["id"])
         if errors:
             flash(errors[0], "error")
             return render_template("student_profile_edit.html", student=student)
@@ -1084,7 +1016,7 @@ def edit_student(user_id):
             form_data["institution_type"] = viewer["institution_type"]
             form_data["institution_name"] = viewer["institution_name"]
             form_data["branch"] = viewer["branch"]
-        errors = validate_profile_form(form_data, "student", editing_user_id=user_id, require_registration_number=False)
+        errors = validate_profile_form(form_data, "student", editing_user_id=user_id)
         if errors:
             flash(errors[0], "error")
             return render_template("edit_student.html", student=student)
@@ -1119,41 +1051,15 @@ def delete_student(user_id):
     return redirect(url_for("main.dashboard"))
 
 
-@bp.route("/faculty/<int:user_id>/delete", methods=["POST"])
-@login_required("admin")
-def delete_faculty(user_id):
-    db = get_db()
-    faculty = db.execute("SELECT * FROM users WHERE id = ? AND role = 'faculty'", (user_id,)).fetchone()
-    if not faculty:
-        flash("Faculty not found.", "error")
-        return redirect(url_for("main.dashboard"))
-    admin = current_user()
-    db.execute("UPDATE attendance SET marked_by = ? WHERE marked_by = ?", (admin["id"], user_id))
-    db.execute("UPDATE student_applications SET resolved_by = ? WHERE resolved_by = ?", (admin["id"], user_id))
-    db.execute("UPDATE users SET created_by = NULL WHERE created_by = ?", (user_id,))
-    db.execute("DELETE FROM pending_changes WHERE target_user_id = ? OR requested_by = ?", (user_id, user_id))
-    db.execute("DELETE FROM users WHERE id = ?", (user_id,))
-    db.commit()
-    flash("Faculty deleted successfully.", "success")
-    return redirect(url_for("main.dashboard"))
-
-
 @bp.route("/applications/new", methods=["GET", "POST"])
 @login_required("student")
 def submit_application():
     user = current_user()
     if request.method == "POST":
-        date_mode = request.form.get("date_mode", "single").strip()
-        start_date_value = request.form.get("start_date", "").strip()
-        end_date_value = request.form.get("end_date", "").strip()
+        application_date = request.form.get("application_date", "").strip()
         reason = request.form.get("reason", "").strip()
-        start_date = parse_iso_date(start_date_value)
-        end_date = start_date if date_mode != "multiple" else parse_iso_date(end_date_value)
-        if not start_date or not end_date or not reason:
+        if not application_date or not reason:
             flash("Application date and reason are required.", "error")
-            return render_template("submit_application.html")
-        if end_date < start_date:
-            flash("End date cannot be earlier than start date.", "error")
             return render_template("submit_application.html")
 
         uploaded_file = request.files.get("application_file")
@@ -1170,10 +1076,10 @@ def submit_application():
         db.execute(
             """
             INSERT INTO student_applications (
-                student_id, application_date, start_date, end_date, reason, file_name, original_file_name, file_type
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                student_id, application_date, reason, file_name, original_file_name, file_type
+            ) VALUES (?, ?, ?, ?, ?, ?)
             """,
-            (user["id"], start_date.isoformat(), start_date.isoformat(), end_date.isoformat(), reason, stored_name, original_name, file_type),
+            (user["id"], application_date, reason, stored_name, original_name, file_type),
         )
         db.commit()
         flash("Application submitted successfully.", "success")
@@ -1207,7 +1113,7 @@ def applications():
     elif user["role"] == "faculty":
         query += " AND " + faculty_data_clause("users")
         params.extend([user["institution_type"], user["institution_name"], user["branch"]])
-    query += " ORDER BY COALESCE(student_applications.start_date, student_applications.application_date) DESC, student_applications.created_at DESC"
+    query += " ORDER BY student_applications.application_date DESC, student_applications.created_at DESC"
     rows = db.execute(query, tuple(params)).fetchall()
     return render_template("applications.html", applications=rows)
 
@@ -1216,101 +1122,37 @@ def applications():
 @login_required("admin", "faculty", "student")
 def download_application(application_id):
     user = current_user()
-    application = fetch_application(application_id)
-    if not application or not application["file_name"]:
-        flash("Application file not found.", "error")
-        return redirect(url_for("main.applications"))
-    if not user_can_access_application(user, application):
-        flash("You cannot access this file.", "error")
-        return redirect(url_for("main.applications"))
-    download_name = application["original_file_name"] or application["file_name"]
-    if supabase_enabled():
-        return send_stored_file("applications", application["file_name"], download_name=download_name, as_attachment=True)
-    return send_from_directory(application_upload_dir(), application["file_name"], as_attachment=True, download_name=download_name)
-
-
-@bp.route("/applications/<int:application_id>/view")
-@login_required("admin", "faculty", "student")
-def view_application_file(application_id):
-    user = current_user()
-    application = fetch_application(application_id)
-    if not application or not application["file_name"]:
-        flash("Application file not found.", "error")
-        return redirect(url_for("main.applications"))
-    if not user_can_access_application(user, application):
-        flash("You cannot access this file.", "error")
-        return redirect(url_for("main.applications"))
-    download_name = application["original_file_name"] or application["file_name"]
-    if supabase_enabled():
-        return send_stored_file("applications", application["file_name"], download_name=download_name, as_attachment=False)
-    return send_from_directory(application_upload_dir(), application["file_name"], as_attachment=False, download_name=download_name)
-
-
-@bp.route("/applications/<int:application_id>/<action>", methods=["POST"])
-@login_required("admin", "faculty")
-def process_application(application_id, action):
-    user = current_user()
     db = get_db()
-    application = fetch_application(application_id)
-    if not application or application["status"] != "submitted":
-        flash("Application request not found.", "error")
+    application = db.execute(
+        """
+        SELECT student_applications.*, users.branch
+        FROM student_applications
+        JOIN users ON users.id = student_applications.student_id
+        WHERE student_applications.id = ?
+        """,
+        (application_id,),
+    ).fetchone()
+    if not application or not application["file_name"]:
+        flash("Application file not found.", "error")
         return redirect(url_for("main.applications"))
-    if not user_can_access_application(user, application):
-        flash("You cannot process this application.", "error")
+    if user["role"] == "student" and application["student_id"] != user["id"]:
+        flash("You cannot access this file.", "error")
         return redirect(url_for("main.applications"))
-    if action in {"approve", "reject"}:
-        start_date = parse_iso_date(application["start_date"] or application["application_date"])
-        end_date = parse_iso_date(application["end_date"] or application["application_date"])
-        if not start_date or not end_date:
-            flash("Application date range is invalid.", "error")
+    if user["role"] == "faculty":
+        student = db.execute("SELECT * FROM users WHERE id = ?", (application["student_id"],)).fetchone()
+        if not student or (
+            student["institution_type"] != user["institution_type"]
+            or student["institution_name"] != user["institution_name"]
+            or student["branch"] != user["branch"]
+        ):
+            flash("You cannot access this file.", "error")
             return redirect(url_for("main.applications"))
-    if action == "approve":
-        remark = f"Approved leave application: {application['reason']}"
-        for attendance_date in application_dates_between(start_date, end_date):
-            db.execute(
-                """
-                INSERT INTO attendance (student_id, attendance_date, status, marked_by, remarks)
-                VALUES (?, ?, 'Leave', ?, ?)
-                ON CONFLICT(student_id, attendance_date)
-                DO UPDATE SET status = excluded.status, marked_by = excluded.marked_by, remarks = excluded.remarks
-                """,
-                (application["student_id"], attendance_date, user["id"], remark),
-            )
-        db.execute(
-            """
-            UPDATE student_applications
-            SET status = 'approved', resolved_by = ?, resolved_at = CURRENT_TIMESTAMP
-            WHERE id = ?
-            """,
-            (user["id"], application_id),
-        )
-        db.commit()
-        flash("Application approved and leave added to attendance feed.", "success")
-    elif action == "reject":
-        remark = f"Rejected application: {application['reason']}"
-        for attendance_date in application_dates_between(start_date, end_date):
-            db.execute(
-                """
-                INSERT INTO attendance (student_id, attendance_date, status, marked_by, remarks)
-                VALUES (?, ?, 'Absent', ?, ?)
-                ON CONFLICT(student_id, attendance_date)
-                DO UPDATE SET status = excluded.status, marked_by = excluded.marked_by, remarks = excluded.remarks
-                """,
-                (application["student_id"], attendance_date, user["id"], remark),
-            )
-        db.execute(
-            """
-            UPDATE student_applications
-            SET status = 'rejected', resolved_by = ?, resolved_at = CURRENT_TIMESTAMP
-            WHERE id = ?
-            """,
-            (user["id"], application_id),
-        )
-        db.commit()
-        flash("Application rejected and absent added to attendance feed.", "success")
-    else:
-        flash("Invalid action.", "error")
-    return redirect(url_for("main.applications"))
+    return send_from_directory(
+        application_upload_dir(),
+        application["file_name"],
+        as_attachment=True,
+        download_name=application["original_file_name"] or application["file_name"],
+    )
 
 
 @bp.route("/faculty/<int:user_id>/edit", methods=["GET", "POST"])

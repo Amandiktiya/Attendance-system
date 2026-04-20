@@ -11,7 +11,7 @@
     <meta property="og:type" content="website">
     <meta property="og:title" content="{% block og_title %}Attendance Hub | Smart Attendance Management System{% endblock %}">
     <meta property="og:description" content="{% block og_description %}Track attendance, manage student records, review approvals, and export reports from one organized dashboard.{% endblock %}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=mobile-label-fix-1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=profile-grid-2">
     {% block head_extra %}{% endblock %}
 </head>
 <body>
@@ -66,169 +66,35 @@
     </main>
     <script>
         (function () {
-            function bootPage() {
-                const navToggle = document.querySelector(".nav-toggle");
-                const nav = document.getElementById("primary-nav");
+            const navToggle = document.querySelector(".nav-toggle");
+            const nav = document.getElementById("primary-nav");
 
-                if (navToggle && nav) {
-                    navToggle.addEventListener("click", function () {
-                        const isOpen = document.body.classList.toggle("nav-open");
-                        navToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
-                    });
-                }
+            if (navToggle && nav) {
+                navToggle.addEventListener("click", function () {
+                    const isOpen = document.body.classList.toggle("nav-open");
+                    navToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+                });
+            }
 
+            function enhanceTables() {
                 document.querySelectorAll(".table-wrap table:not(.mini-table)").forEach(function (table) {
-                    const headings = Array.from(table.querySelectorAll("thead th")).map(function (heading) {
-                        return heading.textContent.trim();
+                const headings = Array.from(table.querySelectorAll("thead th")).map(function (heading) {
+                    return heading.textContent.trim();
+                });
+
+                table.querySelectorAll("tbody tr").forEach(function (row) {
+                    row.querySelectorAll("td").forEach(function (cell, index) {
+                        if (headings[index]) {
+                            cell.setAttribute("data-label", headings[index]);
+                        }
                     });
-
-                    table.querySelectorAll("tbody tr").forEach(function (row) {
-                        row.querySelectorAll("td").forEach(function (cell, index) {
-                            if (headings[index]) {
-                                cell.setAttribute("data-label", headings[index]);
-                            }
-                        });
-                    });
+                });
                 });
             }
 
-            function runInlineScripts(container) {
-                container.querySelectorAll("script").forEach(function (script) {
-                    if (!script.src) {
-                        Function(script.textContent)();
-                    }
-                });
-            }
-
-            function shouldUseAjaxLink(link, event) {
-                if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
-                    return false;
-                }
-                if (link.target || link.hasAttribute("download") || link.dataset.fullReload === "true") {
-                    return false;
-                }
-                const url = new URL(link.href, window.location.href);
-                return url.origin === window.location.origin && !url.hash;
-            }
-
-            function setLoading(isLoading) {
-                const shell = document.querySelector(".page-shell");
-                if (shell) {
-                    shell.classList.toggle("is-loading", isLoading);
-                }
-            }
-
-            async function loadPage(url, options) {
-                const requestOptions = Object.assign({}, options || {});
-                const preserveScroll = Boolean(requestOptions.preserveScroll);
-                const updateHeader = requestOptions.updateHeader !== false;
-                delete requestOptions.preserveScroll;
-                delete requestOptions.updateHeader;
-                setLoading(!preserveScroll);
-                try {
-                    const response = await fetch(url, Object.assign({
-                        headers: { "X-Requested-With": "fetch" }
-                    }, requestOptions));
-                    const contentType = response.headers.get("content-type") || "";
-                    if (!contentType.includes("text/html")) {
-                        window.location.href = url;
-                        return;
-                    }
-
-                    const html = await response.text();
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(html, "text/html");
-                    const nextHeader = doc.querySelector(".site-header");
-                    const nextMain = doc.querySelector(".page-shell");
-                    const header = document.querySelector(".site-header");
-                    const main = document.querySelector(".page-shell");
-
-                    if (!nextHeader || !nextMain || !header || !main) {
-                        window.location.href = url;
-                        return;
-                    }
-
-                    document.title = doc.title;
-                    if (response.url && response.url !== window.location.href) {
-                        history.replaceState({}, "", response.url);
-                    }
-                    if (updateHeader) {
-                        header.innerHTML = nextHeader.innerHTML;
-                    }
-                    main.innerHTML = nextMain.innerHTML;
-                    document.body.classList.remove("nav-open");
-                    runInlineScripts(main);
-                    bootPage();
-                    if (!preserveScroll) {
-                        window.scrollTo({ top: 0, behavior: "smooth" });
-                    }
-                } catch (error) {
-                    window.location.href = url;
-                } finally {
-                    setLoading(false);
-                }
-            }
-
-            document.addEventListener("click", function (event) {
-                const link = event.target.closest("a[href]");
-                if (!link || !shouldUseAjaxLink(link, event)) {
-                    return;
-                }
-                event.preventDefault();
-                const url = link.href;
-                history.pushState({}, "", url);
-                const preserveLink = Boolean(link.closest(".page-shell")) && link.classList.contains("btn");
-                loadPage(url, {
-                    preserveScroll: preserveLink,
-                    updateHeader: !preserveLink
-                });
-            });
-
-            document.addEventListener("submit", function (event) {
-                const form = event.target.closest("form");
-                if (!form || form.dataset.fullReload === "true") {
-                    return;
-                }
-
-                const submitter = event.submitter;
-                if (submitter && submitter.name === "export") {
-                    return;
-                }
-
-                const method = (form.getAttribute("method") || "get").toLowerCase();
-                const actionUrl = form.getAttribute("action") || window.location.href;
-                const action = new URL(actionUrl, window.location.href);
-                if (action.origin !== window.location.origin) {
-                    return;
-                }
-
-                event.preventDefault();
-                if (method === "get") {
-                    const params = new URLSearchParams(new FormData(form));
-                    if (submitter && submitter.name) {
-                        params.set(submitter.name, submitter.value);
-                    }
-                    action.search = params.toString();
-                    history.pushState({}, "", action.href);
-                    loadPage(action.href, { preserveScroll: true, updateHeader: false });
-                    return;
-                }
-
-                const body = submitter ? new FormData(form, submitter) : new FormData(form);
-                const preserveForm = form.dataset.ajaxPreserve !== "false";
-                loadPage(action.href, {
-                    method: method,
-                    body: body,
-                    preserveScroll: preserveForm,
-                    updateHeader: !preserveForm
-                });
-            });
-
-            window.addEventListener("popstate", function () {
-                loadPage(window.location.href);
-            });
-
-            bootPage();
+            window.AttendanceHub = window.AttendanceHub || {};
+            window.AttendanceHub.enhanceTables = enhanceTables;
+            enhanceTables();
         })();
     </script>
 </body>
