@@ -215,11 +215,26 @@ def _convert_named(sql):
     return re.sub(r":([A-Za-z_][A-Za-z0-9_]*)", r"%(\1)s", sql)
 
 
+def _escape_literal_percent(sql):
+    protected = {}
+
+    def protect(match):
+        token = f"__PG_PLACEHOLDER_{len(protected)}__"
+        protected[token] = match.group(0)
+        return token
+
+    sql = re.sub(r"%\([A-Za-z_][A-Za-z0-9_]*\)s|%s", protect, sql)
+    sql = sql.replace("%", "%%")
+    for token, placeholder in protected.items():
+        sql = sql.replace(token, placeholder)
+    return sql
+
+
 def _convert_sql_for_postgres(sql):
     sql = _convert_qmark(sql)
     sql = _convert_named(sql)
     sql = sql.replace("GLOB '[0-9]*'", "~ '^[0-9]+$'")
-    return sql
+    return _escape_literal_percent(sql)
 
 
 class PostgresConnection:
