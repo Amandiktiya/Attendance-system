@@ -1,6 +1,7 @@
 import os
 import re
 import sqlite3
+from threading import Lock
 from datetime import date
 from pathlib import Path
 
@@ -542,5 +543,15 @@ def ensure_default_admin(db):
 
 def init_app(app):
     app.teardown_appcontext(close_db)
-    with app.app_context():
-        init_db()
+    app.config["DB_INITIALIZED"] = False
+    app.config["DB_INIT_LOCK"] = Lock()
+
+    @app.before_request
+    def ensure_db_initialized():
+        if app.config.get("DB_INITIALIZED"):
+            return
+        with app.config["DB_INIT_LOCK"]:
+            if app.config.get("DB_INITIALIZED"):
+                return
+            init_db()
+            app.config["DB_INITIALIZED"] = True
