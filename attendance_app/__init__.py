@@ -18,6 +18,8 @@ def create_app():
         SUPABASE_URL=os.environ.get("SUPABASE_URL", ""),
         SUPABASE_SERVICE_ROLE_KEY=os.environ.get("SUPABASE_SERVICE_ROLE_KEY", ""),
         SUPABASE_STORAGE_BUCKET=os.environ.get("SUPABASE_STORAGE_BUCKET", ""),
+        SUPABASE_DB_URL=os.environ.get("SUPABASE_DB_URL", ""),
+        DATABASE_URL=os.environ.get("DATABASE_URL", ""),
     )
 
     init_app(app)
