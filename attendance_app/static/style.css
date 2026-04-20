@@ -290,7 +290,17 @@ p {
 }
 
 .inline-form {
+    align-items: flex-end;
     justify-content: flex-start;
+}
+
+.inline-form label {
+    min-width: 240px;
+}
+
+.inline-form .btn {
+    min-height: 56px;
+    margin-bottom: 0;
 }
 
 .section-head {
@@ -340,6 +350,26 @@ p {
 .dashboard-page .actions .btn,
 .dashboard-page .actions form {
     flex: 0 0 auto;
+}
+
+.table-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.7rem;
+    flex-wrap: nowrap;
+    min-width: 220px;
+    white-space: nowrap;
+}
+
+.table-actions form {
+    display: inline-flex;
+    margin: 0;
+}
+
+.table-actions .btn {
+    min-width: 92px;
+    padding: 0.75rem 1.05rem;
 }
 
 .form-card {
@@ -1511,6 +1541,17 @@ tbody tr:hover {
         width: 100%;
     }
 
+    .table-actions {
+        justify-content: flex-start;
+        min-width: 0;
+        width: 100%;
+    }
+
+    .table-actions .btn,
+    .table-actions form {
+        width: auto;
+    }
+
     .grid-form,
     .profile-grid {
         grid-template-columns: 1fr;
@@ -1837,6 +1878,17 @@ tbody tr:hover {
         border-radius: 12px;
         padding: 0.85rem 1rem;
         text-align: center;
+    }
+
+    .table-actions {
+        justify-content: flex-start;
+        min-width: 0;
+        width: 100%;
+    }
+
+    .table-actions .btn,
+    .table-actions form {
+        width: auto;
     }
 
     input,

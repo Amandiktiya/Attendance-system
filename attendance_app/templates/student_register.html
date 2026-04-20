@@ -16,7 +16,7 @@
                 <h2>Create Student Account</h2>
                 <p class="muted">All fields are required. In demo mode, the OTP is shown on the screen.</p>
 
-                <form method="post" class="inline-form otp-form">
+                <form method="post" class="inline-form otp-form" data-full-reload="true">
                     <input type="hidden" name="action" value="send_otp">
                     <label>
                         Mobile Number
@@ -31,7 +31,7 @@
                     </div>
                 {% endif %}
 
-                <form method="post" enctype="multipart/form-data" class="grid-form signup-grid">
+                <form method="post" enctype="multipart/form-data" class="grid-form signup-grid" data-full-reload="true">
                     <input type="hidden" name="action" value="register">
                     <label>Full Name<input type="text" name="full_name" required></label>
                     <label>Profile Picture<input type="file" name="profile_picture" accept=".jpg,.jpeg,.png" required></label>
@@ -48,13 +48,13 @@
                     <label id="student-institution-name-group">College / School / Institution Name<input type="text" name="institution_name" id="student-institution-name"></label>
                     <label>Branch<input type="text" name="branch" required></label>
                     <label>Semester<input type="text" name="semester" required></label>
-                    <label>Year(Academic)<input type="text" name="year" required></label>
+                    <label>Year (Academic)<input type="text" name="year" required></label>
                     <label>Date of Birth<input type="date" name="dob" required></label>
                     <label>Class Roll Number<input type="text" name="class_roll_number" inputmode="numeric" required></label>
                     <label>UBTER Roll Number<input type="text" name="roll_number" required></label>
-                    <label>Registration Number<input type="text" name="registration_number" required></label>
+                    <label>Registration Number (optional)<input type="text" name="registration_number"></label>
                     <label>Gmail<input type="email" name="gmail" required></label>
-                    <label>Alternate Email<input type="email" name="email" required></label>
+                    <label>Alternate Email (optional)<input type="email" name="email"></label>
                     <label>Mobile Number<input type="text" name="mobile_number" maxlength="10" value="{{ registration_mobile or '' }}" required></label>
                     <label>OTP Code<input type="text" name="otp_code" maxlength="6" required></label>
                     <label>Set Password<input type="password" name="password" required></label>

@@ -2,7 +2,10 @@
 
 {% block content %}
 <section class="card form-card">
-    <h2>Edit Student</h2>
+    <div class="section-head profile-edit-head">
+        <a class="icon-btn" href="{{ url_for('main.dashboard') }}" aria-label="Back to dashboard" title="Back to dashboard">&larr;</a>
+        <h2>Edit Student</h2>
+    </div>
     <p class="muted">Admins and faculty can update student details.</p>
     {% if student['profile_picture'] %}
         <img class="profile-photo" src="{{ url_for('main.profile_picture', filename=student['profile_picture']) }}" alt="Student profile picture">
@@ -22,13 +25,13 @@
         <label id="edit-student-institution-name-group">College / School / Institution Name<input type="text" name="institution_name" id="edit-student-institution-name" value="{{ student['institution_name'] }}"></label>
         <label>Branch<input type="text" name="branch" value="{{ student['branch'] }}" required></label>
         <label>Semester<input type="text" name="semester" value="{{ student['semester'] }}" required></label>
-        <label>Year<input type="text" name="year" value="{{ student['year'] }}" required></label>
+        <label>Year (Academic)<input type="text" name="year" value="{{ student['year'] }}" required></label>
         <label>Date of Birth<input type="date" name="dob" value="{{ student['dob'] }}" required></label>
         <label>Class Roll Number<input type="text" name="class_roll_number" inputmode="numeric" value="{{ student['class_roll_number'] }}" required></label>
-        <label>Roll Number<input type="text" name="roll_number" value="{{ student['roll_number'] }}" required></label>
-        <label>Registration Number<input type="text" name="registration_number" value="{{ student['registration_number'] }}" required></label>
+        <label>UBTER Roll Number<input type="text" name="roll_number" value="{{ student['roll_number'] }}" required></label>
+        <label>Registration Number (optional)<input type="text" name="registration_number" value="{{ student['registration_number'] }}"></label>
         <label>Gmail<input type="email" name="gmail" value="{{ student['gmail'] }}" required></label>
-        <label>Alternate Email<input type="email" name="email" value="{{ student['email'] }}" required></label>
+        <label>Alternate Email (optional)<input type="email" name="email" value="{{ student['email'] }}"></label>
         <label>Mobile Number<input type="text" name="mobile_number" maxlength="10" value="{{ student['mobile_number'] }}" required></label>
         <label>New Password (optional)<input type="password" name="password"></label>
         <button class="btn primary" type="submit">Update Student</button>

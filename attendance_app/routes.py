@@ -149,10 +149,12 @@ def student_identifier_query(identifier):
     )
 
 
-def validate_profile_form(form, role, editing_user_id=None):
+def validate_profile_form(form, role, editing_user_id=None, require_registration_number=True):
     db = get_db()
     errors = []
-    required_fields = ["full_name", "email", "mobile_number", "institution_type"]
+    required_fields = ["full_name", "mobile_number", "institution_type"]
+    if role != "student":
+        required_fields.append("email")
     if role == "student":
         required_fields.extend(
             [
@@ -163,10 +165,11 @@ def validate_profile_form(form, role, editing_user_id=None):
                 "year",
                 "dob",
                 "roll_number",
-                "registration_number",
                 "gmail",
             ]
         )
+        if require_registration_number:
+            required_fields.append("registration_number")
     else:
         required_fields.append("branch")
 
@@ -196,17 +199,25 @@ def validate_profile_form(form, role, editing_user_id=None):
 
     email = form.get("email", "").strip()
     if email:
+        email_query = "SELECT id FROM users WHERE email = ? AND id != ?"
+        email_params = [email, editing_user_id or 0]
+        if role in {"faculty", "student"}:
+            email_query += " AND role != 'admin'"
         existing = db.execute(
-            "SELECT id FROM users WHERE email = ? AND id != ?",
-            (email, editing_user_id or 0),
+            email_query,
+            email_params,
         ).fetchone()
         if existing:
             errors.append("This email is already in use.")
 
     if mobile_number:
+        mobile_query = "SELECT id FROM users WHERE mobile_number = ? AND id != ?"
+        mobile_params = [mobile_number, editing_user_id or 0]
+        if role in {"faculty", "student"}:
+            mobile_query += " AND role != 'admin'"
         existing = db.execute(
-            "SELECT id FROM users WHERE mobile_number = ? AND id != ?",
-            (mobile_number, editing_user_id or 0),
+            mobile_query,
+            mobile_params,
         ).fetchone()
         if existing:
             errors.append("This mobile number is already in use.")
@@ -232,7 +243,6 @@ def validate_profile_form(form, role, editing_user_id=None):
 def profile_payload(form, role):
     payload = {
         "full_name": form.get("full_name", "").strip(),
-        "father_name": form.get("father_name", "").strip(),
         "branch": form.get("branch", "").strip(),
         "semester": form.get("semester", "").strip(),
         "year": form.get("year", "").strip(),
@@ -248,6 +258,7 @@ def profile_payload(form, role):
     if role == "student":
         payload.update(
             {
+                "father_name": form.get("father_name", "").strip(),
                 "class_roll_number": form.get("class_roll_number", "").strip(),
                 "roll_number": form.get("roll_number", "").strip(),
                 "registration_number": form.get("registration_number", "").strip(),
@@ -416,7 +427,7 @@ def update_user_record(user_id, form, role, allow_password_update=True):
     db = get_db()
     params = {
         "full_name": form.get("full_name", "").strip(),
-        "father_name": form.get("father_name", "").strip(),
+        "father_name": form.get("father_name", "").strip() if role == "student" else "",
         "branch": form.get("branch", "").strip(),
         "semester": form.get("semester", "").strip(),
         "year": form.get("year", "").strip(),
@@ -461,7 +472,6 @@ def update_user_record(user_id, form, role, allow_password_update=True):
             """
             UPDATE users
             SET full_name = :full_name,
-                father_name = :father_name,
                 profile_picture = COALESCE(NULLIF(:profile_picture, ''), profile_picture),
                 institution_type = :institution_type,
                 institution_name = :institution_name,
@@ -761,7 +771,7 @@ def student_register():
             if not is_valid_mobile(mobile_number):
                 flash("Mobile number must be 10 digits.", "error")
             else:
-                existing = db.execute("SELECT id FROM users WHERE mobile_number = ?", (mobile_number,)).fetchone()
+                existing = db.execute("SELECT id FROM users WHERE mobile_number = ? AND role != 'admin'", (mobile_number,)).fetchone()
                 if existing:
                     flash("This mobile number is already linked to an account.", "error")
                 else:
@@ -774,12 +784,12 @@ def student_register():
         else:
             form = request.form
             registration_mobile = form.get("mobile_number", "").strip()
-            required_fields = ["full_name", "father_name", "institution_type", "branch", "semester", "year", "dob", "class_roll_number", "roll_number", "registration_number", "gmail", "email", "mobile_number", "password", "otp_code"]
+            required_fields = ["full_name", "father_name", "institution_type", "branch", "semester", "year", "dob", "class_roll_number", "roll_number", "gmail", "mobile_number", "password", "otp_code"]
             if any(not form.get(field, "").strip() for field in required_fields):
                 flash("All fields are required. The account cannot be created with an incomplete form.", "error")
                 return render_template("student_register.html", otp_value=session.get("pending_student_otp"), registration_mobile=registration_mobile)
 
-            validation_errors = validate_profile_form(form, "student")
+            validation_errors = validate_profile_form(form, "student", require_registration_number=False)
             if validation_errors:
                 flash(validation_errors[0], "error")
                 return render_template("student_register.html", otp_value=session.get("pending_student_otp"), registration_mobile=registration_mobile)
@@ -828,7 +838,7 @@ def student_register():
                     form.get("institution_name", "").strip(),
                     form["class_roll_number"].strip(),
                     form["roll_number"].strip(),
-                    form["registration_number"].strip(),
+                    form["registration_number"].strip() or None,
                     form["full_name"].strip(),
                     form["father_name"].strip(),
                     form["branch"].strip(),
@@ -837,7 +847,7 @@ def student_register():
                     form["dob"].strip(),
                     form["mobile_number"].strip(),
                     form["gmail"].strip(),
-                    form["email"].strip(),
+                    form["email"].strip() or None,
                     generate_password_hash(form["password"]),
                     1,
                 ),
@@ -1005,7 +1015,7 @@ def add_faculty():
             """,
             (
                 "faculty", profile_picture, form["institution_type"].strip(), form.get("institution_name", "").strip(), form["full_name"].strip(),
-                form.get("father_name", "").strip(), form["branch"].strip(), "", "", "", form["mobile_number"].strip(),
+                "", form["branch"].strip(), "", "", "", form["mobile_number"].strip(),
                 form["email"].strip(), form["email"].strip(), generate_password_hash(form["password"]), 1, user["id"],
             ),
         )
@@ -1028,7 +1038,7 @@ def student_profile_edit():
             return render_template("student_profile_edit.html", student=student)
         if profile_picture:
             form_data["profile_picture"] = profile_picture
-        errors = validate_profile_form(form_data, "student", editing_user_id=user["id"])
+        errors = validate_profile_form(form_data, "student", editing_user_id=user["id"], require_registration_number=False)
         if errors:
             flash(errors[0], "error")
             return render_template("student_profile_edit.html", student=student)
@@ -1066,7 +1076,7 @@ def edit_student(user_id):
             form_data["institution_type"] = viewer["institution_type"]
             form_data["institution_name"] = viewer["institution_name"]
             form_data["branch"] = viewer["branch"]
-        errors = validate_profile_form(form_data, "student", editing_user_id=user_id)
+        errors = validate_profile_form(form_data, "student", editing_user_id=user_id, require_registration_number=False)
         if errors:
             flash(errors[0], "error")
             return render_template("edit_student.html", student=student)
@@ -1098,6 +1108,25 @@ def delete_student(user_id):
     db.execute("DELETE FROM users WHERE id = ?", (user_id,))
     db.commit()
     flash("Student deleted successfully.", "success")
+    return redirect(url_for("main.dashboard"))
+
+
+@bp.route("/faculty/<int:user_id>/delete", methods=["POST"])
+@login_required("admin")
+def delete_faculty(user_id):
+    db = get_db()
+    faculty = db.execute("SELECT * FROM users WHERE id = ? AND role = 'faculty'", (user_id,)).fetchone()
+    if not faculty:
+        flash("Faculty not found.", "error")
+        return redirect(url_for("main.dashboard"))
+    admin = current_user()
+    db.execute("UPDATE attendance SET marked_by = ? WHERE marked_by = ?", (admin["id"], user_id))
+    db.execute("UPDATE student_applications SET resolved_by = ? WHERE resolved_by = ?", (admin["id"], user_id))
+    db.execute("UPDATE users SET created_by = NULL WHERE created_by = ?", (user_id,))
+    db.execute("DELETE FROM pending_changes WHERE target_user_id = ? OR requested_by = ?", (user_id, user_id))
+    db.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    db.commit()
+    flash("Faculty deleted successfully.", "success")
     return redirect(url_for("main.dashboard"))
 
 

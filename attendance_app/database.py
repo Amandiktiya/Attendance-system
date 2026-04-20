@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS users (
     semester TEXT,
     year TEXT,
     dob TEXT,
-    mobile_number TEXT UNIQUE,
+    mobile_number TEXT,
     gmail TEXT,
     email TEXT,
     password_hash TEXT NOT NULL,
@@ -122,6 +122,60 @@ def migrate_db(db):
         db.execute("ALTER TABLE users ADD COLUMN class_roll_number TEXT")
     if "profile_picture" not in user_columns:
         db.execute("ALTER TABLE users ADD COLUMN profile_picture TEXT")
+
+    users_schema = db.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'users'"
+    ).fetchone()
+    users_sql = users_schema["sql"] if users_schema else ""
+    if "mobile_number TEXT UNIQUE" in users_sql:
+        db.execute("PRAGMA foreign_keys = OFF")
+        db.execute(
+            """
+            CREATE TABLE users_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                role TEXT NOT NULL CHECK (role IN ('admin', 'faculty', 'student')),
+                profile_picture TEXT,
+                institution_type TEXT,
+                institution_name TEXT,
+                class_roll_number TEXT,
+                roll_number TEXT UNIQUE,
+                registration_number TEXT UNIQUE,
+                full_name TEXT NOT NULL,
+                father_name TEXT,
+                branch TEXT,
+                semester TEXT,
+                year TEXT,
+                dob TEXT,
+                mobile_number TEXT,
+                gmail TEXT,
+                email TEXT,
+                password_hash TEXT NOT NULL,
+                is_mobile_verified INTEGER NOT NULL DEFAULT 0,
+                created_by INTEGER,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(created_by) REFERENCES users(id)
+            )
+            """
+        )
+        db.execute(
+            """
+            INSERT INTO users_new (
+                id, role, profile_picture, institution_type, institution_name,
+                class_roll_number, roll_number, registration_number, full_name,
+                father_name, branch, semester, year, dob, mobile_number, gmail,
+                email, password_hash, is_mobile_verified, created_by, created_at
+            )
+            SELECT
+                id, role, profile_picture, institution_type, institution_name,
+                class_roll_number, roll_number, registration_number, full_name,
+                father_name, branch, semester, year, dob, mobile_number, gmail,
+                email, password_hash, is_mobile_verified, created_by, created_at
+            FROM users
+            """
+        )
+        db.execute("DROP TABLE users")
+        db.execute("ALTER TABLE users_new RENAME TO users")
+        db.execute("PRAGMA foreign_keys = ON")
 
     attendance_schema = db.execute(
         "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'attendance'"

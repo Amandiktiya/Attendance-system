@@ -92,7 +92,7 @@
                 <tr>
                     <th>Class Roll</th>
                     <th>Photo</th>
-                    <th>Roll Number</th>
+                    <th>UBTER Roll Number</th>
                     <th>Name</th>
                     <th>Institution</th>
                     <th>Branch</th>
@@ -114,11 +114,13 @@
                         <td>{{ student['full_name'] }}</td>
                         <td>{{ student['institution_name'] or '-' }}</td>
                         <td>{{ student['branch'] }}</td>
-                        <td class="actions">
+                        <td>
+                            <div class="table-actions">
                             <a class="btn secondary" href="{{ url_for('main.edit_student', user_id=student['id']) }}">Edit</a>
                             <form method="post" action="{{ url_for('main.delete_student', user_id=student['id']) }}">
                                 <button class="btn secondary" type="submit">Delete</button>
                             </form>
+                            </div>
                         </td>
                     </tr>
                 {% endfor %}
@@ -181,11 +183,18 @@
                             <td>{{ faculty['email'] }}</td>
                             <td>{{ faculty['mobile_number'] }}</td>
                             <td>
+                                <div class="table-actions">
                                 {% if current_user['role'] == 'admin' or current_user['id'] == faculty['id'] %}
                                     <a class="btn secondary" href="{{ url_for('main.edit_faculty', user_id=faculty['id']) }}">Edit</a>
+                                    {% if current_user['role'] == 'admin' %}
+                                        <form method="post" action="{{ url_for('main.delete_faculty', user_id=faculty['id']) }}">
+                                            <button class="btn secondary" type="submit">Delete</button>
+                                        </form>
+                                    {% endif %}
                                 {% else %}
                                     -
                                 {% endif %}
+                                </div>
                             </td>
                         </tr>
                     {% else %}
