@@ -694,13 +694,18 @@ def login():
         institution_name = request.form.get("institution_name", "").strip()
         branch = request.form.get("branch", "").strip()
 
-        if role in {"admin", "faculty"} and not institution_type:
+        if role == "faculty" and not institution_type:
             flash("Please choose how you want to use this app.", "error")
             return render_template("login.html", faculty_institutions=available_institutions("faculty"), student_institutions=available_institutions("student"))
 
         if role == "student":
             query, params = student_identifier_query(identifier)
             user = db.execute(query, params).fetchone()
+        elif role == "admin":
+            user = db.execute(
+                "SELECT * FROM users WHERE role = ? AND LOWER(TRIM(email)) = ?",
+                (role, identifier.lower()),
+            ).fetchone()
         else:
             if role != "admin" and institution_name_required(role, institution_type) and not institution_name:
                 flash("Please select a college or school.", "error")

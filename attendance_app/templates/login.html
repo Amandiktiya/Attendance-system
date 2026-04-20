@@ -116,12 +116,18 @@
     function syncInstitutionField() {
         const role = roleSelect.value;
         const institutionType = institutionTypeSelect.value;
+        const needsType = role !== "admin";
         const needsInstitution = role !== "admin" && institutionType && (role === "student" ? institutionType !== "other_institution" : schoolCollegeTypes.has(institutionType));
         const needsBranch = role === "faculty";
+        institutionTypeSelect.closest(".input-box").style.display = needsType ? "flex" : "none";
+        institutionTypeSelect.required = needsType;
         institutionNameGroup.style.display = needsInstitution ? "flex" : "none";
         institutionNameInput.required = needsInstitution;
         branchGroup.style.display = needsBranch ? "flex" : "none";
         branchInput.required = needsBranch;
+        if (!needsType) {
+            institutionTypeSelect.value = "";
+        }
         if (!needsInstitution) {
             institutionNameInput.value = "";
         }
