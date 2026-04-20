@@ -20,6 +20,9 @@ def create_app():
         SUPABASE_STORAGE_BUCKET=os.environ.get("SUPABASE_STORAGE_BUCKET", ""),
         SUPABASE_DB_URL=os.environ.get("SUPABASE_DB_URL", ""),
         DATABASE_URL=os.environ.get("DATABASE_URL", ""),
+        ADMIN_EMAIL=os.environ.get("ADMIN_EMAIL", ""),
+        ADMIN_PASSWORD=os.environ.get("ADMIN_PASSWORD", ""),
+        ADMIN_NAME=os.environ.get("ADMIN_NAME", "System Admin"),
     )
 
     init_app(app)

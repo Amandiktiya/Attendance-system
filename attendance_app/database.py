@@ -502,8 +502,44 @@ def migrate_sqlite(db):
 
 
 def ensure_default_admin(db):
+    configured_email = (current_app.config.get("ADMIN_EMAIL") or "").strip().lower()
+    configured_password = (current_app.config.get("ADMIN_PASSWORD") or "").strip()
+    configured_name = (current_app.config.get("ADMIN_NAME") or "System Admin").strip()
+
     admin = db.execute("SELECT id FROM users WHERE role = 'admin' LIMIT 1").fetchone()
     if admin:
+        if configured_email or configured_password:
+            target_admin = admin
+            if configured_email:
+                target_admin = (
+                    db.execute(
+                        "SELECT id FROM users WHERE role = 'admin' AND LOWER(TRIM(email)) = ? LIMIT 1",
+                        (configured_email,),
+                    ).fetchone()
+                    or admin
+                )
+            db.execute(
+                """
+                UPDATE users
+                SET full_name = COALESCE(NULLIF(?, ''), full_name),
+                    institution_type = COALESCE(NULLIF(institution_type, ''), 'other_institution'),
+                    institution_name = COALESCE(NULLIF(institution_name, ''), 'System Administration'),
+                    branch = COALESCE(NULLIF(branch, ''), 'Administration'),
+                    gmail = COALESCE(NULLIF(?, ''), gmail),
+                    email = COALESCE(NULLIF(?, ''), email),
+                    password_hash = COALESCE(?, password_hash),
+                    is_mobile_verified = 1
+                WHERE id = ?
+                """,
+                (
+                    configured_name,
+                    configured_email,
+                    configured_email,
+                    generate_password_hash(configured_password) if configured_password else None,
+                    target_admin["id"],
+                ),
+            )
+            return
         db.execute(
             """
             UPDATE users
@@ -526,16 +562,16 @@ def ensure_default_admin(db):
             "other_institution",
             "System Administration",
             "",
-            "System Admin",
+            configured_name,
             "",
             "Administration",
             "",
             str(date.today().year),
             "",
             "9999999999",
-            "admin@gmail.com",
-            "admin@example.com",
-            generate_password_hash("admin123"),
+            configured_email or "admin@gmail.com",
+            configured_email or "admin@example.com",
+            generate_password_hash(configured_password or "admin123"),
             1,
         ),
     )

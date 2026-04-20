@@ -24,6 +24,15 @@ python app.py
 - Email: `admin@example.com`
 - Password: `admin123`
 
+For deployment, set environment variables on the hosting service so the deployed
+database gets the same admin login:
+
+```text
+ADMIN_EMAIL=amandiktiya@gmail.com
+ADMIN_PASSWORD=your-new-password
+ADMIN_NAME=Aman Admin
+```
+
 ## Notes
 
 - Student login uses `roll number + password`.
